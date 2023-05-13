@@ -17,7 +17,7 @@ def tosign():
 
 
 # Background
-bg_0 = Image.open("D:\\Codes\\Python\\Thesis\\img\\bg.jpg")
+bg_0 = Image.open("img\\bg.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((450, 450)))
 
 lbl = Label(scan, image=bck_pk, border=0)
@@ -33,13 +33,13 @@ heading.place(x=100, y=5)
 box_2 = Frame(scan, width=390, height=350, bg='#010F57')
 box_2.place(x=30, y=80)
 
-person = Image.open("D:\\Codes\\Python\\Thesis\\img\\person.JPG")
+person = Image.open("img\\person.JPG")
 per_pk = ImageTk.PhotoImage(person.resize((105, 110)))
 
 lbl = Label(box_2, image=per_pk, border=0)
 lbl.place(x=10, y=5)
 
-edit = Image.open("D:\\Codes\\Python\\Thesis\\img\\edit.PNG")
+edit = Image.open("img\\edit.PNG")
 ed_pk = ImageTk.PhotoImage(edit.resize((18, 18)))
 
 lbl = Label(scan, image=ed_pk, border=0)
@@ -49,7 +49,7 @@ user = Label(box_2, text='Username', fg='white', bg='#010F57', font=('Arial', 11
 user.place(x=20, y=110)
 
 # logout
-log = Image.open("D:\\Codes\\Python\\Thesis\\img\\logout.JPG")
+log = Image.open("img\\logout.JPG")
 lg_pk = ImageTk.PhotoImage(log.resize((30, 25)))
 
 lbl = Label(scan, image=lg_pk, border=0)
@@ -74,7 +74,7 @@ progress.place(x=30, y=240)
 def top():
     messagebox.showinfo("Scan", "Scan Successfully!")
     scan.destroy()
-    os.system("Dashboard.py")
+    os.system("Results.py")
 
 
 i = 0
