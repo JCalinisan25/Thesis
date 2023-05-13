@@ -13,7 +13,7 @@ terms.title("Terms and Conditions Page")
 terms.geometry("600x700")
 
 # Background
-bg_0 = Image.open("D:\\Codes\\Python\\Thesis\\img\\bg.jpg")
+bg_0 = Image.open("img\\bg.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((600, 700)))
 
 lbl = Label(terms, image=bck_pk)
