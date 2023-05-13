@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
+import pymysql
 import os
 
 # window
@@ -16,7 +17,7 @@ def on_entry(e):
 def on_password(e):
     name = user.get()
     if name == '':
-        user.insert(0, 'Username or Email')
+        user.insert(0, 'Email')
 
 
 def on_enter(e):
@@ -30,14 +31,18 @@ def on_leave(e):
 
 
 def invalid():
-    if user.get() == 'Username or Email' and passw.get() == 'Password':
-        messagebox.showerror("Error", "No Username or Password Input!")
-    elif user.get() == 'Username or Email' or passw.get() == '' and user.get() == '' or passw.get() == 'Password':
-        messagebox.showerror("Error", "Invalid Username or Password!")
-    else:
-        login.destroy()
-        os.system("Dashboard.py")
-
+        try:
+            con=pymysql.connect(host='localhost', user='root', password='Pangthesis2023@', database='EPBIP')
+            cur=con.cursor()
+            cur.execute('select * from register where emailid=%s and password=%s',(user.get(), passw.get()))
+            row=cur.fetchone()
+            if row == None:
+                messagebox.showerror("Error", "Invalid Email or Password!")
+            else:
+                login.destroy()
+                os.system("Dashboard.py")
+        except Exception as es:
+            messagebox.showerror("Error",f'Error Due to : {str(es)}')
 
 def toreg():
     login.destroy()
@@ -50,7 +55,7 @@ def forgot():
 
 
 # Background
-bg_0 = Image.open("D:\\Codes\\Python\\Thesis\\img\\bg.jpg")
+bg_0 = Image.open("img\\bg.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((400, 420)))
 
 lbl = Label(login, image=bck_pk, border=0)
@@ -67,7 +72,7 @@ heading.place(x=130, y=5)
 box_2 = Frame(login, width=300, height=320, bg='#010F57')
 box_2.place(x=50, y=80)
 
-logo = Image.open("D:\\Codes\\Python\\Thesis\\img\\logoo.png")
+logo = Image.open("img\\logoo.png")
 log_pk = ImageTk.PhotoImage(logo.resize((105, 100)))
 
 lbl = Label(box_2, image=log_pk, border=0)
@@ -79,7 +84,7 @@ log_name.place(x=100, y=100)
 # user
 user = Entry(box_2, width=25, fg='grey', border=1, bg='white', font=('Arial', 11, 'bold'))
 user.place(x=50, y=140)
-user.insert(0, 'Username or Email')
+user.insert(0, ' Email')
 user.bind('<FocusIn>', on_entry)
 user.bind('<FocusOut>', on_password)
 
