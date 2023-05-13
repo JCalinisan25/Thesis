@@ -24,7 +24,7 @@ def log():
 
 
 # Background
-bg_0 = Image.open("D:\\Codes\\Python\\Thesis\\img\\bg.jpg")
+bg_0 = Image.open("img\\bg.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((400, 400)))
 
 lbl = Label(forgot, image=bck_pk, border=0)
@@ -35,7 +35,7 @@ box_1 = Frame(forgot, width=370, height=360, bg='#010F57')
 box_1.place(x=15, y=20)
 
 # logo
-logo = Image.open("D:\\Codes\\Python\\Thesis\\img\\logoo.png")
+logo = Image.open("img\\logoo.png")
 log_pk = ImageTk.PhotoImage(logo.resize((95, 90)))
 
 lbl = Label(box_1, image=log_pk, border=0)
