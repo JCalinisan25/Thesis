@@ -1,5 +1,6 @@
 from tkinter import *
 from PIL import Image, ImageTk
+import os
 
 # window
 verify = Tk()
@@ -8,12 +9,14 @@ verify.geometry("500x400")
 
 
 def vfied():
-    verify.destroy()
-    import Verified
+            verify.destroy()
+            os.system('Verified.py')
+
+
 
 
 # Background
-bg_0 = Image.open("D:\\Codes\\Python\\Thesis\\img\\bg.jpg")
+bg_0 = Image.open("img\\bg.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((500, 400)))
 
 lbl = Label(verify, image=bck_pk, border=0)
@@ -24,7 +27,7 @@ box_1 = Frame(verify, width=470, height=355, bg='#010F57')
 box_1.place(x=15, y=20)
 
 # logo
-logo = Image.open("D:\\Codes\\Python\\Thesis\\img\\logoo.png")
+logo = Image.open("img\\logoo.png")
 log_pk = ImageTk.PhotoImage(logo.resize((95, 90)))
 
 lbl = Label(box_1, image=log_pk, border=0)
@@ -39,7 +42,7 @@ box_2.place(x=1, y=133)
 heading = Label(box_1, text='Verify Your Account', fg='white', bg='#010F57', font=('Arial', 25, 'bold'))
 heading.place(x=90, y=140)
 
-info = Label(box_1, text="Welcome to E.P.B.I.P, Username! Before we get \nstarted, please confirm your email address.",
+info = Label(box_1, text="Welcome to E.P.B.I.P, Before we get \nstarted, please confirm your email address.",
              fg='white', bg='#010F57', font=('Arial', 14, 'bold'))
 info.place(x=15, y=190)
 
