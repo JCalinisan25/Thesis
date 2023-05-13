@@ -17,7 +17,7 @@ def dash():
 
 
 # Background
-bg_0 = Image.open("D:\\Codes\\Python\\Thesis\\img\\bg.jpg")
+bg_0 = Image.open("img\\bg.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((550, 600)))
 
 lbl = Label(result, image=bck_pk, border=0)
@@ -33,7 +33,7 @@ heading.place(x=130, y=5)
 notebook = ttk.Notebook(result)
 notebook.pack(pady=70)
 
-error = Image.open("D:\\Codes\\Python\\Thesis\\img\\error.PNG")
+error = Image.open("img\\error.PNG")
 ror_pk = ImageTk.PhotoImage(error.resize((100, 100)))
 
 lbl = Label(notebook, image=ror_pk, border=0)
