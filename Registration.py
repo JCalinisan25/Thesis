@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
+import pymysql
 import os
 
 # window
@@ -25,12 +26,26 @@ def inval():
     elif user.get() == '' or email.get() == '' or passw.get() == '':
         messagebox.showerror("Error", "No Input in other field!")
     else:
-        regist.destroy()
-        os.system('EmailVerif.py')
+        try:
+            con=pymysql.connect(host='localhost', user='root', password='Pangthesis2023@', database='EPBIP')
+            cur=con.cursor()
+            cur.execute('select * from register where emailid=%s', email.get())
+            row=cur.fetchone()
+            if row!=None:
+                messagebox.showerror("Error", "User already Exist, Please try with another Email!")
+            else:
+                cur.execute("insert into register values(%s,%s,%s)",(user.get(), email.get(), passw.get()))
+                con.commit()
+                con.close()
+                messagebox.showinfo("Success", "Register Successfully!")
+                regist.destroy()
+                os.system('EmailVerif.py')
+        except Exception as es:
+            messagebox.showerror("Error",f'Error Due to : {str(es)}')
 
 
 # Background
-bg_0 = Image.open("D:\\Codes\\Python\\Thesis\\img\\bg.jpg")
+bg_0 = Image.open("img\\bg.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((700, 400)))
 
 lbl = Label(regist, image=bck_pk, border=0)
@@ -46,7 +61,7 @@ heading.place(x=250, y=5)
 box_2 = Frame(regist, width=555, height=290, bg='#010F57')
 box_2.place(x=70, y=80)
 
-logo = Image.open("D:\\Codes\\Python\\Thesis\\img\\logoo.png")
+logo = Image.open("img\\logoo.png")
 log_pk = ImageTk.PhotoImage(logo.resize((210, 205)))
 
 lbl = Label(box_2, image=log_pk, border=0)
@@ -79,33 +94,29 @@ passw = Entry(box_2, textvariable=password, width=23, fg='black', border=1, bg='
 passw.place(x=350, y=123)
 
 # button
-Button(box_2, width=15, pady=6, text="Register", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
-       command=inval).place(x=300, y=163)
+Button(box_2, width=9, pady=6, text="Register", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
+       command=inval).place(x=300, y=175)
+
+Button(box_2, width=10, pady=6, text="Login", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
+       command=tosign).place(x=410, y=175)
+
 
 # Terms and Conditions/DPA Acceptance
 check = Checkbutton(regist, fg='black', onvalue=1, offvalue=0, bg='#010F57', font=('Arial', 8, 'bold'))
-check.place(x=325, y=295)
+check.place(x=325, y=320)
 
 text1 = Label(box_2, text="I agree to E.P.B.I.P", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
-text1.place(x=280, y=217)
+text1.place(x=280, y=242)
 
 trm = Button(box_2, width=17, text='terms and conditions', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
              font=('Arial', 8, 'bold', 'underline'), command=toterms)
-trm.place(x=377, y=217)
+trm.place(x=377, y=242)
 
 text2 = Label(box_2, text="and ", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
-text2.place(x=497, y=217)
+text2.place(x=497, y=242)
 
 dpa = Button(box_2, width=14, text='Privacy Policy', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
              font=('Arial', 8, 'bold', 'underline'), command=toterms)
-dpa.place(x=268, y=233)
-
-# To Register
-text3 = Label(text="Already have an account?", fg='white', bg='#010F57', font=('Arial', 11, 'bold'))
-text3.place(x=320, y=339)
-
-sign_in = Button(box_2, width=6, text='Sign in', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
-                 font=('Arial', 11, 'bold', 'underline'), command=tosign)
-sign_in.place(x=431, y=256)
+dpa.place(x=268, y=258)
 
 regist.mainloop()
