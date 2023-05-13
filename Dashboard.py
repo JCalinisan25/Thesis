@@ -24,7 +24,7 @@ def toscan():
 
 
 # Background
-bg_0 = Image.open("D:\\Codes\\Python\\Thesis\\img\\bg.jpg")
+bg_0 = Image.open("img\\bg.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((450, 450)))
 
 lbl = Label(dash, image=bck_pk, border=0)
@@ -46,7 +46,7 @@ per_pk = ImageTk.PhotoImage(person.resize((105, 110)))
 lbl = Label(box_2, image=per_pk, border=0)
 lbl.place(x=20, y=5)
 
-edit = Image.open("D:\\Codes\\Python\\Thesis\\img\\edit.PNG")
+edit = Image.open("img\\edit.PNG")
 ed_pk = ImageTk.PhotoImage(edit.resize((18, 18)))
 
 lbl = Label(box_2, image=ed_pk, border=0)
@@ -56,7 +56,7 @@ user = Label(box_2, text='Username', fg='white', bg='#010F57', font=('Arial', 11
 user.place(x=30, y=110)
 
 # logout
-log = Image.open("D:\\Codes\\Python\\Thesis\\img\\logout.JPG")
+log = Image.open("img\\logout.JPG")
 lg_pk = ImageTk.PhotoImage(log.resize((30, 25)))
 
 lbl = Label(dash, image=lg_pk, border=0)
