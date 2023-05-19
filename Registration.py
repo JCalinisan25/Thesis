@@ -1,8 +1,21 @@
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
-import pymysql
+import pyrebase
 import os
+
+config = {
+  "apiKey": "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
+  "authDomain": "epbip-17adb.firebaseapp.com",
+  "databaseURL": "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
+  "projectId": "epbip-17adb",
+  "storageBucket": "epbip-17adb.appspot.com",
+  "messagingSenderId": "612338602406",
+  "appId": "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
+  "measurementId": "G-J1896JVRT9"
+}
+firebase = pyrebase.initialize_app(config)
+database = firebase.database()
 
 # window
 regist = Tk()
@@ -19,29 +32,22 @@ def toterms():
     regist.destroy()
     os.system('TermsnCond.py')
 
-
+  
 def inval():
     if user.get() == '' and email.get() == '' and passw.get() == '':
         messagebox.showerror("Error", "No Input in the field!")
     elif user.get() == '' or email.get() == '' or passw.get() == '':
         messagebox.showerror("Error", "No Input in other field!")
     else:
-        try:
-            con=pymysql.connect(host='localhost', user='root', password='Pangthesis2023@', database='EPBIP')
-            cur=con.cursor()
-            cur.execute('select * from register where emailid=%s', email.get())
-            row=cur.fetchone()
-            if row!=None:
-                messagebox.showerror("Error", "User already Exist, Please try with another Email!")
-            else:
-                cur.execute("insert into register values(%s,%s,%s)",(user.get(), email.get(), passw.get()))
-                con.commit()
-                con.close()
-                messagebox.showinfo("Success", "Register Successfully!")
-                regist.destroy()
-                os.system('EmailVerif.py')
-        except Exception as es:
-            messagebox.showerror("Error",f'Error Due to : {str(es)}')
+        data = {
+            "username": user.get(),
+            "email": email.get(),
+            "password":  passw.get()
+        }
+        database.child("Users").push(data)
+        messagebox.showinfo("Success", "Data submitted successfully!")
+        regist.destroy()
+        os.system('EmailVerif.py')
 
 
 # Background
@@ -90,8 +96,9 @@ email.place(x=350, y=75)
 pass_name = Label(box_2, text='Password:', fg='white', bg='#010F57', font=('Arial', 18, 'bold'))
 pass_name.place(x=224, y=119)
 passw = Entry(box_2, textvariable=password, width=23, fg='black', border=1, bg='white', font=('Arial', 11, 'bold'),
-              show="*")
+              show="")
 passw.place(x=350, y=123)
+
 
 # button
 Button(box_2, width=9, pady=6, text="Register", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
