@@ -1,21 +1,16 @@
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
-import pyrebase
+import firebase_admin
+from firebase_admin import credentials, db
 import os
 
-config = {
-  "apiKey": "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
-  "authDomain": "epbip-17adb.firebaseapp.com",
-  "databaseURL": "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
-  "projectId": "epbip-17adb",
-  "storageBucket": "epbip-17adb.appspot.com",
-  "messagingSenderId": "612338602406",
-  "appId": "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
-  "measurementId": "G-J1896JVRT9"
-}
-firebase = pyrebase.initialize_app(config)
-database = firebase.database()
+cred = credentials.Certificate('credential.json')
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app/'
+})
+
+database_ref = db.reference('Users')
 
 # window
 regist = Tk()
@@ -34,21 +29,35 @@ def toterms():
 
   
 def inval():
+    global email  
     if usernm.get() == '' and email.get() == '' and passw.get() == '':
         messagebox.showerror("Error", "No Input in the field!")
     elif usernm.get() == '' or email.get() == '' or passw.get() == '':
         messagebox.showerror("Error", "No Input in other field!")
     else:
-        data = {
-            "username": usernm.get(),
-            "email": email.get(),
-            "password":  passw.get()
-        }
-        database.child("Users").push(data)
-        messagebox.showinfo("Success", "Data submitted successfully!")
-        regist.destroy()
-        os.system('EmailVerif.py')
+        email = email.get()
+        if check_user_exist(email):
+            messagebox.showerror("Error", "User already exists!")
+        else:
+            data = {
+                "username": usernm.get(),
+                "email": email,
+                "password":  passw.get()
+            }
+            new_user_ref = database_ref.push()
+            new_user_ref.set(data)
+            messagebox.showinfo("Success", "Data Saved Successfully!")
+            regist.destroy()
+            os.system('EmailVerif.py')
 
+
+# Check if the user already exists
+def check_user_exist(email):
+    data = database_ref.get()
+    for user_key, user_data in data.items():
+        if 'email' in user_data and user_data['email'] == email:
+            return True
+    return False
 
 # Background
 bg_0 = Image.open("img\\bg.jpg")
