@@ -34,13 +34,13 @@ def toterms():
 
   
 def inval():
-    if user.get() == '' and email.get() == '' and passw.get() == '':
+    if usernm.get() == '' and email.get() == '' and passw.get() == '':
         messagebox.showerror("Error", "No Input in the field!")
-    elif user.get() == '' or email.get() == '' or passw.get() == '':
+    elif usernm.get() == '' or email.get() == '' or passw.get() == '':
         messagebox.showerror("Error", "No Input in other field!")
     else:
         data = {
-            "username": user.get(),
+            "username": usernm.get(),
             "email": email.get(),
             "password":  passw.get()
         }
@@ -83,8 +83,8 @@ password = StringVar()
 # user
 user_name = Label(box_2, text='Username:', fg='white', bg='#010F57', font=('Arial', 17, 'bold'))
 user_name.place(x=225, y=23)
-user = Entry(box_2, textvariable=username, width=23, fg='black', border=1, bg='white', font=('Arial', 11, 'bold'))
-user.place(x=350, y=27)
+usernm = Entry(box_2, textvariable=username, width=23, fg='black', border=1, bg='white', font=('Arial', 11, 'bold'))
+usernm.place(x=350, y=27)
 
 # email
 email_name = Label(box_2, text='Email Add.:', fg='white', bg='#010F57', font=('Arial', 18, 'bold'))
@@ -96,7 +96,7 @@ email.place(x=350, y=75)
 pass_name = Label(box_2, text='Password:', fg='white', bg='#010F57', font=('Arial', 18, 'bold'))
 pass_name.place(x=224, y=119)
 passw = Entry(box_2, textvariable=password, width=23, fg='black', border=1, bg='white', font=('Arial', 11, 'bold'),
-              show="")
+              show="*")
 passw.place(x=350, y=123)
 
 
