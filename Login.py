@@ -2,20 +2,18 @@ from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os
-import pyrebase
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
 
-config = {
-  "apiKey": "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
-  "authDomain": "epbip-17adb.firebaseapp.com",
-  "databaseURL": "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
-  "projectId": "epbip-17adb",
-  "storageBucket": "epbip-17adb.appspot.com",
-  "messagingSenderId": "612338602406",
-  "appId": "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
-  "measurementId": "G-J1896JVRT9"
-}
-firebase = pyrebase.initialize_app(config)
-database = firebase.database()
+cred = credentials.Certificate("credential.json")
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app/'
+})
+
+# Access the Realtime Database and retrieve data
+database_ref = db.reference('Users')  # Assuming 'users' is the node containing login data
+data = database_ref.get()
 
 # window
 login = Tk()
@@ -61,15 +59,22 @@ def invalid():
     elif usernm.get() == 'Email' or passw.get() == 'Password':
         messagebox.showerror("Error", "No input in other field")
     else:
-        users=database.child("Users").get()
-        for user in users.each():
-            if  usernm.get() != user.val() or passw.get() != user.val():
-                messagebox.showerror("Error", "Invalid Email or Password")
-            else:
-                messagebox.showinfo("Success", "Login successful!")
-                login.destroy()
-                os.system("Dashboard.py")
-             
+        email = usernm.get()
+        password = passw.get()
+        if check_credentials(email, password):
+            messagebox.showinfo("Success", "Login Successfully")
+            login.destroy()
+            os.system("Dashboard.py")
+        else:
+            messagebox.showerror("Error", "Invalid Username or Password")
+
+# Check if the credentials match with the database data
+def check_credentials(email, password):
+    for user_key, user_data in data.items():
+        if 'email' in user_data and 'password' in user_data:
+            if user_data['email'] == email and user_data['password'] == password:
+                return True
+    return False
            
 
 def toreg():
