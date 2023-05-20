@@ -2,9 +2,9 @@ from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os
+import re
 import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import db
+from firebase_admin import credentials, db
 
 cred = credentials.Certificate("credential.json")
 firebase_admin.initialize_app(cred, {
@@ -12,7 +12,7 @@ firebase_admin.initialize_app(cred, {
 })
 
 # Access the Realtime Database and retrieve data
-database_ref = db.reference('Users')  # Assuming 'users' is the node containing login data
+database_ref = db.reference('Users') 
 data = database_ref.get()
 
 # window
@@ -20,48 +20,58 @@ login = Tk()
 login.title("Login Page")
 login.geometry("400x420")
 
+# Email validation
+def is_valid_email(email):
+    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+    return re.match(pattern, email)
 
+# Email
 def on_entry(e):
-    usernm.configure(show="")
-    if usernm.get() == "Email":
+    if usernm.get() == "Example@example.com":
         usernm.configure(foreground="black")
         usernm.delete(0, 'end')
 
-
 def on_password(e):
     if usernm.get() == "":
-        usernm.configure(show="", foreground="grey")
-        usernm.delete(0, "end")
-        usernm.insert(0, "Email")
-    else:
-        usernm.configure(show="", foreground="black")
+        usernm.insert(0, 'Example@example.com')
+        usernm.configure(foreground="grey")
 
+# Password
 def on_enter(e):
     passw.configure(show="*")
     if passw.get() == "Password":
         passw.configure(foreground="black")
         passw.delete(0, "end")
 
-
 def on_leave(e):
     if passw.get() == "":
-        passw.configure(show="", foreground="grey")
-        passw.delete(0, "end")
-        passw.insert(0, "Password")
-    else:
-        passw.configure(show="*", foreground="black")
-        
+        passw.configure(show="")
+        passw.insert(0, 'Password')
+        passw.configure(foreground="grey")
 
+# Password Visibility Toggle
+def show_pass():
+    passw["show"] = ""
+    hid_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=hide_pk, command=hide_pass)
+    hid_button.place(x=234, y=177)
 
+def hide_pass():
+    passw["show"] = "*"
+    show_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=show_pk, command=show_pass)
+    show_button.place(x=234, y=177)
+
+#validation of data
 def invalid():
-    if usernm.get() == 'Email' and passw.get() == 'Password':
+    if usernm.get() == 'Example@example.com' and passw.get() == 'Password':
         messagebox.showerror("Error", "No input in the field")
-    elif usernm.get() == 'Email' or passw.get() == 'Password':
-        messagebox.showerror("Error", "No input in other field")
+    elif usernm.get() == 'Example@example.com' or passw.get() == 'Password':
+        messagebox.showerror("Error", "One of the fields is empty")
     else:
         email = usernm.get()
         password = passw.get()
-        if check_credentials(email, password):
+        if not is_valid_email(email):
+            messagebox.showerror("Error", "Invalid Email Format!")
+        elif check_credentials(email, password):
             messagebox.showinfo("Success", "Login Successfully")
             login.destroy()
             os.system("Dashboard.py")
@@ -75,17 +85,19 @@ def check_credentials(email, password):
             if user_data['email'] == email and user_data['password'] == password:
                 return True
     return False
-           
 
+#To registration
 def toreg():
     login.destroy()
     os.system("Registration.py")
 
-
+#To forgot password
 def forgot():
     login.destroy()
     os.system("Forgot.py")
 
+def remove_focus(e):
+    login.focus()
 
 # Background
 bg_0 = Image.open("img\\bg.jpg")
@@ -95,7 +107,7 @@ lbl = Label(login, image=bck_pk, border=0)
 lbl.place(x=0, y=0, relwidth=1, relheight=1)
 lbl.pack()
 
-# logo
+# Logo
 box_2 = Frame(login, width=300, height=320, bg='#010F57')
 box_2.place(x=50, y=50)
 
@@ -108,25 +120,35 @@ lbl.place(x=100, y=5)
 log_name = Label(box_2, text='E.P.B.I.P', fg='white', bg='#010F57', font=('Copperplate', 18, 'bold'))
 log_name.place(x=100, y=100)
 
-# user
+# User
 usernm = Entry(box_2, width=25, fg='grey', border=1, bg='white', font=('Arial', 11, 'bold'), show="")
 usernm.place(x=50, y=140)
-usernm.insert(0, 'Email')
+usernm.insert(0, 'Example@example.com')
 usernm.bind('<FocusIn>', on_entry)
 usernm.bind('<FocusOut>', on_password)
+usernm.bind('<Button-1>', remove_focus)
 
-# password
-passw = Entry(box_2, width=25, fg='grey', border=1, bg='white', font=('Arial', 11, 'bold'),show="")
+# Password
+passw = Entry(box_2, width=25, fg='grey', border=1, bg='white', font=('Arial', 11, 'bold'), show="")
 passw.place(x=50, y=175)
 passw.insert(0, 'Password')
 passw.bind('<FocusIn>', on_enter)
 passw.bind('<FocusOut>', on_leave)
+passw.bind('<Button-1>', remove_focus)
 
-# button
+# Password Visibility Toggle Button
+show = Image.open("img\\show.jpg")
+show_pk = ImageTk.PhotoImage(show.resize((15, 12)))
+hide = Image.open("img\\hide.jpg")
+hide_pk = ImageTk.PhotoImage(hide.resize((15, 12)))
+vis_button = Button(box_2, width=18, height=17, bg='white', bd=0, image=show_pk, command=show_pass)
+vis_button.place(x=234, y=177)
+
+# Button
 Button(box_2, width=10, pady=5, text="Log In", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
        command=invalid).place(x=100, y=215)
 
-# forgot password
+# Forgot password
 f_pass = Button(box_2, width=15, text='Forgot Password?', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
                 font=('Arial', 9, 'bold', 'underline'), command=forgot)
 f_pass.place(x=100, y=265)
