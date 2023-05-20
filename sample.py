@@ -2,7 +2,6 @@ from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os
-import re
 import firebase_admin
 from firebase_admin import credentials, db
 
@@ -12,7 +11,7 @@ firebase_admin.initialize_app(cred, {
 })
 
 # Access the Realtime Database and retrieve data
-database_ref = db.reference('Users') 
+database_ref = db.reference('Users')  # Assuming 'users' is the node containing login data
 data = database_ref.get()
 
 # window
@@ -20,20 +19,15 @@ login = Tk()
 login.title("Login Page")
 login.geometry("400x420")
 
-# Email validation
-def is_valid_email(email):
-    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    return re.match(pattern, email)
-
 # Email
 def on_entry(e):
-    if usernm.get() == "Example@example.com":
+    if usernm.get() == "Email":
         usernm.configure(foreground="black")
         usernm.delete(0, 'end')
 
 def on_password(e):
     if usernm.get() == "":
-        usernm.insert(0, 'Example@example.com')
+        usernm.insert(0, 'Email')
         usernm.configure(foreground="grey")
 
 # Password
@@ -60,18 +54,15 @@ def hide_pass():
     show_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=show_pk, command=show_pass)
     show_button.place(x=234, y=177)
 
-#validation of data
 def invalid():
-    if usernm.get() == 'Example@example.com' and passw.get() == 'Password':
+    if usernm.get() == 'Email' and passw.get() == 'Password':
         messagebox.showerror("Error", "No input in the field")
-    elif usernm.get() == 'Example@example.com' or passw.get() == 'Password':
+    elif usernm.get() == 'Email' or passw.get() == 'Password':
         messagebox.showerror("Error", "One of the fields is empty")
     else:
         email = usernm.get()
         password = passw.get()
-        if not is_valid_email(email):
-            messagebox.showerror("Error", "Invalid Email Format!")
-        elif check_credentials(email, password):
+        if check_credentials(email, password):
             messagebox.showinfo("Success", "Login Successfully")
             login.destroy()
             os.system("Dashboard.py")
@@ -86,12 +77,10 @@ def check_credentials(email, password):
                 return True
     return False
 
-#To registration
 def toreg():
     login.destroy()
     os.system("Registration.py")
 
-#To forgot password
 def forgot():
     login.destroy()
     os.system("Forgot.py")
@@ -123,7 +112,7 @@ log_name.place(x=100, y=100)
 # User
 usernm = Entry(box_2, width=25, fg='grey', border=1, bg='white', font=('Arial', 11, 'bold'), show="")
 usernm.place(x=50, y=140)
-usernm.insert(0, 'Example@example.com')
+usernm.insert(0, 'Email')
 usernm.bind('<FocusIn>', on_entry)
 usernm.bind('<FocusOut>', on_password)
 usernm.bind('<Button-1>', remove_focus)

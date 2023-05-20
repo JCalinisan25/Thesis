@@ -9,13 +9,19 @@ forgot.geometry("400x400")
 
 
 def on_in(e):
-    f_pass.delete(0, 'end')
+    f_pass.configure(show="")
+    if f_pass.get() == "Email":
+        f_pass.configure(foreground="black")
+        f_pass.delete(0, 'end')
 
 
 def on_out(e):
-    name = f_pass.get()
-    if name == '':
-        f_pass.insert(0, 'Email')
+    if f_pass.get() == "":
+        f_pass.configure(show="", foreground="grey")
+        f_pass.delete(0, "end")
+        f_pass.insert(0, "Email")
+    else:
+        f_pass.configure(show="", foreground="black")
 
 
 def log():
@@ -55,7 +61,7 @@ info = Label(box_1, text="Please enter your email to send link \nto get back int
              bg='#010F57', font=('Arial', 11, 'bold'))
 info.place(x=60, y=160)
 
-f_pass = Entry(box_1, width=35, fg='grey', border=1, bg='white', font=('Arial', 12, 'bold'))
+f_pass = Entry(box_1, width=35, fg='grey', border=1, bg='white', font=('Arial', 12, 'bold'), show="")
 f_pass.place(x=27, y=210)
 f_pass.insert(0, 'Enter Email')
 f_pass.bind('<FocusIn>', on_in)
