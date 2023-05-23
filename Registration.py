@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import firebase_admin
-from firebase_admin import credentials, db
+from firebase_admin import credentials, db, auth
 import webbrowser
 import os
 import re
@@ -53,7 +53,7 @@ def validate_inputs():
                              "• At least one uppercase letter\n"
                              "• At least one punctuation mark.")
     elif not is_valid_email(email_value):
-        messagebox.showerror("Error", "Invalid email address!\n\n(Example: Abcd@example.com)")
+        messagebox.showerror("Error", "Invalid Email Address Format!\n(Example: Abcd@email.com)")
     elif not checks.get():
         messagebox.showerror("Error", "Please accept the terms and conditions!")
     else:
@@ -70,7 +70,7 @@ def validate_inputs():
             new_user_ref.set(data)
             messagebox.showinfo("Success", "Data saved successfully!")
             regist.destroy()
-            os.system('EmailVerif.py')
+            os.system('verified.py')
 
 
 # Check if the user already exists
