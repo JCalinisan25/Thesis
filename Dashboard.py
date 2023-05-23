@@ -40,7 +40,7 @@ heading.place(x=100, y=5)
 box_2 = Frame(dash, width=390, height=355, bg='#010F57')
 box_2.place(x=30, y=80)
 
-person = Image.open("D:\\Codes\\Python\\Thesis\\img\\person.JPG")
+person = Image.open("img\\person.JPG")
 per_pk = ImageTk.PhotoImage(person.resize((105, 110)))
 
 lbl = Label(box_2, image=per_pk, border=0)
