@@ -27,13 +27,13 @@ def is_valid_email(email):
 
 # Email
 def on_entry(e):
-    if usernm.get() == "Example@example.com":
+    if usernm.get() == "Example@email.com":
         usernm.configure(foreground="black")
         usernm.delete(0, 'end')
 
 def on_password(e):
     if usernm.get() == "":
-        usernm.insert(0, 'Example@example.com')
+        usernm.insert(0, 'Example@email.com')
         usernm.configure(foreground="grey")
 
 # Password
@@ -53,18 +53,18 @@ def on_leave(e):
 def show_pass():
     passw["show"] = ""
     hid_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=hide_pk, command=hide_pass)
-    hid_button.place(x=234, y=177)
+    hid_button.place(x=235, y=177)
 
 def hide_pass():
     passw["show"] = "*"
     show_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=show_pk, command=show_pass)
-    show_button.place(x=234, y=177)
+    show_button.place(x=235, y=177)
 
 #validation of data
 def invalid():
-    if usernm.get() == 'Example@example.com' and passw.get() == 'Password':
+    if usernm.get() == 'Example@email.com' and passw.get() == 'Password':
         messagebox.showerror("Error", "No input in the field")
-    elif usernm.get() == 'Example@example.com' or passw.get() == 'Password':
+    elif usernm.get() == 'Example@email.com' or passw.get() == 'Password':
         messagebox.showerror("Error", "One of the fields is empty")
     else:
         email = usernm.get()
@@ -123,7 +123,7 @@ log_name.place(x=100, y=100)
 # User
 usernm = Entry(box_2, width=25, fg='grey', border=1, bg='white', font=('Arial', 11, 'bold'), show="")
 usernm.place(x=50, y=140)
-usernm.insert(0, 'Example@example.com')
+usernm.insert(0, 'Example@email.com')
 usernm.bind('<FocusIn>', on_entry)
 usernm.bind('<FocusOut>', on_password)
 usernm.bind('<Button-1>', remove_focus)
