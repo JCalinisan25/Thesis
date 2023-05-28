@@ -1,6 +1,21 @@
 import os
 from tkinter import *
 from PIL import Image, ImageTk
+from tkinter import messagebox
+import pyrebase
+
+config = {
+'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
+'authDomain': "epbip-17adb.firebaseapp.com",
+'databaseURL': "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
+'projectId': "epbip-17adb",
+'storageBucket': "epbip-17adb.appspot.com",
+'messagingSenderId': "612338602406",
+'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
+'measurementId': "G-J1896JVRT9"
+}
+firebase = pyrebase.initialize_app(config)
+auth = firebase.auth()
 
 # window
 forgot = Tk()
@@ -9,25 +24,32 @@ forgot.geometry("400x400")
 
 
 def on_in(e):
-    f_pass.configure(show="")
-    if f_pass.get() == "Email":
-        f_pass.configure(foreground="black")
+    if f_pass.get() == "Enter Email":
         f_pass.delete(0, 'end')
+        f_pass.configure(foreground="black")
 
 
 def on_out(e):
     if f_pass.get() == "":
-        f_pass.configure(show="", foreground="grey")
-        f_pass.delete(0, "end")
-        f_pass.insert(0, "Email")
-    else:
-        f_pass.configure(show="", foreground="black")
+        f_pass.insert(0, "Enter Email")
+        f_pass.configure(foreground="grey")
+
 
 
 def log():
     forgot.destroy()
     os.system("Login.py")
 
+def reset_password():
+    email = f_pass.get()
+    try:
+        # Attempt to send the password reset email.
+        auth.send_password_reset_email(email)
+        messagebox.showinfo("Success", "Password reset has been sent to your email address!")
+        forgot.destroy()
+        os.system('Login.py')
+    except:
+        messagebox.showerror("Error", "Failed to send reset password email")
 
 # Background
 bg_0 = Image.open("img\\bg.jpg")
@@ -69,7 +91,7 @@ f_pass.bind('<FocusOut>', on_out)
 
 # button
 btn1 = Button(box_1, width=15, pady=5, text="Send Login Link", bg='white', fg='black', cursor='hand2', border=0,
-              font=('Arial', 12, 'bold'))
+              font=('Arial', 12, 'bold'), command=reset_password)
 btn1.place(x=110, y=250)
 
 btn2 = Button(box_1, width=15, pady=5, text="Cancel", bg='white', fg='black', cursor='hand2', border=0,

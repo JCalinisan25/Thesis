@@ -1,18 +1,22 @@
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
-import firebase_admin
-from firebase_admin import credentials, db, auth
-import webbrowser
-import os
-import re
+import pyrebase, json, requests, webbrowser
+import os, re
 
-cred = credentials.Certificate('credential.json')
-firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app/'
-})
-
-database_ref = db.reference('Users')
+config = {
+'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
+'authDomain': "epbip-17adb.firebaseapp.com",
+'databaseURL': "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
+'projectId': "epbip-17adb",
+'storageBucket': "epbip-17adb.appspot.com",
+'messagingSenderId': "612338602406",
+'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
+'measurementId': "G-J1896JVRT9"
+}
+firebase = pyrebase.initialize_app(config)
+database = firebase.database()
+auth = firebase.auth()
 
 # Window
 regist = Tk()
@@ -57,29 +61,27 @@ def validate_inputs():
     elif not checks.get():
         messagebox.showerror("Error", "Please accept the terms and conditions!")
     else:
-        email = email.get()
-        if check_user_exist(email):
-            messagebox.showerror("Error", "User already exists!")
-        else:
-            data = {
-                "username": usernm.get(),
-                "email": email,
-                "password": passw.get()
-            }
-            new_user_ref = database_ref.push()
-            new_user_ref.set(data)
-            messagebox.showinfo("Success", "Data saved successfully!")
-            regist.destroy()
-            os.system('verified.py')
+        try:
+            user = auth.create_user_with_email_and_password(email_value, password)
+        except requests.exceptions.HTTPError as error:
+            error_json = error.args[1]
+            error_details = json.loads(error_json)['error']['message']
+            if error_details == 'EMAIL_EXISTS':
+                messagebox.showerror("Error", "This email address is already in exist!")
+                return
+            else:
+                messagebox.showerror("Error", error_details)
+                return
 
-
-# Check if the user already exists
-def check_user_exist(email):
-    data = database_ref.get()
-    for user_key, user_data in data.items():
-        if 'email' in user_data and user_data['email'] == email:
-            return True
-    return False
+        auth.send_email_verification(user['idToken'])
+        data = {
+            "username": usernm.get(),
+            "email": email_value
+        }
+        database.child("Users").push(data)
+        messagebox.showinfo("Success", "Data saved successfully!")
+        regist.destroy()
+        os.system('verified.py')
 
 # PDF Terms and Conditions
 def show_terms():
@@ -89,13 +91,13 @@ def show_terms():
 # Password Visibility Toggle
 def show_pass():
     passw["show"] = ""
-    hid_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=hide_pk, command=hide_pass)
-    hid_button.place(x=515, y=126)
+    hid_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=hide_pk, command=hide_pass)
+    hid_button.place(x=519, y=125)
 
 def hide_pass():
     passw["show"] = "*"
-    show_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=show_pk, command=show_pass)
-    show_button.place(x=515, y=126)
+    show_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=show_pk, command=show_pass)
+    show_button.place(x=519, y=125)
 
 def update_password_strength():
     password = passw.get()
@@ -182,13 +184,12 @@ show = Image.open("img\\show.jpg")
 show_pk = ImageTk.PhotoImage(show.resize((15, 12)))
 hide = Image.open("img\\hide.jpg")
 hide_pk = ImageTk.PhotoImage(hide.resize((15, 12)))
-vis_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=show_pk, command=show_pass)
-vis_button.place(x=515, y=126)
+vis_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=show_pk, command=show_pass)
+vis_button.place(x=519, y=125)
 
 # Create the password strength indicator label
 strength_label = Label(box_2, text="", font=('Arial', 8, 'bold'), bg='#010F57')
 strength_label.place_forget()
-
 
 # Button
 reg = Button(box_2, width=9, pady=6, text="Register", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
