@@ -3,10 +3,7 @@ from __future__ import print_function
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
-import os
-import re
-import firebase_admin
-from firebase_admin import credentials, db
+import os, re, pyrebase, json
 
 import os
 import base64
@@ -183,6 +180,18 @@ firebase_admin.initialize_app(cred, {
 # Access the Realtime Database and retrieve data
 database_ref = db.reference('Users') 
 data = database_ref.get()
+config = {
+'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
+'authDomain': "epbip-17adb.firebaseapp.com",
+'databaseURL': "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
+'projectId': "epbip-17adb",
+'storageBucket': "epbip-17adb.appspot.com",
+'messagingSenderId': "612338602406",
+'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
+'measurementId': "G-J1896JVRT9"
+}
+firebase = pyrebase.initialize_app(config)
+auth = firebase.auth()
 
 # window
 login = Tk()
@@ -229,7 +238,6 @@ def hide_pass():
     show_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=show_pk, command=show_pass)
     show_button.place(x=235, y=177)
 
-#validation of data
 def invalid():
     if usernm.get() == 'Example@email.com' and passw.get() == 'Password':
         messagebox.showerror("Error", "No input in the field")
@@ -238,6 +246,19 @@ def invalid():
     else:
         email = usernm.get()
         password = passw.get()
+        if not is_valid_email(email):
+            messagebox.showerror("Error", "Invalid Email Format!")
+        else:
+            try:
+                user = auth.sign_in_with_email_and_password(email, password)
+                # save the user's email after a successful login
+                with open('user.json', 'w') as file:
+                    json.dump({'email': email}, file)
+                messagebox.showinfo("Success", "Login Successfully")
+                login.destroy()
+                os.system("Dashboard.py")
+            except:
+                messagebox.showerror("Error", "Invalid Username or Password")
     # email = "danielmarco@gmail.com"
     # password = "Danielmarco1!"
     # main()
@@ -250,13 +271,6 @@ def invalid():
     else:
         messagebox.showerror("Error", "Invalid Username or Password")
 
-# Check if the credentials match with the database data
-def check_credentials(email, password):
-    for user_key, user_data in data.items():
-        if 'email' in user_data and 'password' in user_data:
-            if user_data['email'] == email and user_data['password'] == password:
-                return True
-    return False
 
 #To registration
 def toreg():
