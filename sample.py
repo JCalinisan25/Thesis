@@ -1,71 +1,220 @@
 from tkinter import *
-from tkinter import ttk
-from PIL import Image, ImageTk
 from tkinter import messagebox
-import os, time
+from PIL import Image, ImageTk
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import auth, db
+import os, webbrowser, re
 
-# window
-scan = Tk()
-scan.title("Scanning Page")
-scan.geometry("450x450")
+# Initialize Firebase Admin SDK
+cred = credentials.Certificate('credential.json')
+firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app/'
+})
+database = db.reference()
 
-# Flag to indicate whether to continue scanning or not
-continue_scanning = True
+# Window
+regist = Tk()
+regist.title("E.P.B.I.P")
+regist.geometry("700x400")
+regist.resizable(False, False)
+regist.iconbitmap(r'img\\logo.ico')
 
-
+# Back to login page
 def to_sign():
-    global continue_scanning
-    if messagebox.askyesno("Confirmation", "Are you sure you want to stop while scanning?"):
-        continue_scanning = False
-        scan.destroy()
-        os.system('Dashboard.py')
+    regist.destroy()
+    os.system('Login.py')
 
+# Show password
+def show_password():
+    if passw.cget('show') == '*':
+        passw.config(show='')
+    else:
+        passw.config(show='*')
 
-def complete_scan():
-    messagebox.showinfo("Successful", "Scan completed successfully!")
+def is_valid_email(email):
+    # Use regex pattern for email validation
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email)
 
+# Validation of username and password
+def validate_inputs():
+    global email
+    email_value = email.get()
+    password = passw.get()
+    c_password = c_passw.get()
+
+    if usernm.get() == '' and email.get() == '' and password == '' and c_password == '':
+        messagebox.showerror("Error", "No input in the field!")
+    elif usernm.get() == '' or email.get() == '' or password == '' or c_password =='':
+        messagebox.showerror("Error", "No input in other field!")
+    elif not re.match(r"^(?=.*\d)(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
+        messagebox.showerror("Error", "Password must meet the following criteria:\n"
+                             "• Must be at least 8 characters long\n"
+                             "• At least one digit\n"
+                             "• At least one uppercase letter\n"
+                             "• At least one punctuation mark.")
+    elif password != c_password:
+        messagebox.showerror("Error", "Passwords do not match!")
+    elif not is_valid_email(email_value):
+        messagebox.showerror("Error", "Invalid Email Address Format!\n(Example: Abcd@email.com)")
+    elif not checks.get():
+        messagebox.showerror("Error", "Please accept the terms and conditions!")
+    else:
+        try:
+            user = auth.create_user(email=email_value, password=password)
+        except auth.EmailAlreadyExistsError:
+            messagebox.showerror("Error", "This email address is already in use!")
+            return
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
+
+        # Send email verification
+        auth.generate_email_verification_link(user.email)
+        
+        data = {
+            "username": usernm.get(),
+            "email": email_value
+        }
+        database.child("Users").push(data)
+        
+        messagebox.showinfo("Success", "Registration successful! Please check your email for verification.")
+        regist.destroy()
+        os.system('verified.py')
+
+# PDF Terms and Conditions
+def show_terms():
+    pdf_file = "Terms_and_Conditions.pdf"
+    webbrowser.open(pdf_file)
+
+# Password Visibility Toggle for password
+def show_pass():
+    passw["show"] = ""
+    hid_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=hide_pk, command=hide_pass)
+    hid_button.place(x=214, y=171)
+
+def hide_pass():
+    passw["show"] = "*"
+    show_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=show_pk, command=show_pass)
+    show_button.place(x=214, y=171)
+
+def update_password_strength():
+    password = passw.get()
+    strength_label.config(fg='white')  # Reset the color to white
+
+    if len(password) == 0:
+        strength_label.place_forget()  # Hide the strength label
+    else:
+        strength_label.place(x=90, y=150)  # Show the strength label
+
+        # Define regular expressions for different password strength levels
+        strong_regex = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+        medium_regex = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$"
+
+        # Check password strength using the regular expressions
+        if re.match(strong_regex, password):
+            strength_label.config(text="Strong Password", fg="green")
+        elif re.match(medium_regex, password):
+            strength_label.config(text="Medium Password", fg="orange")
+        else:
+            strength_label.config(text="Weak Password", fg="red")
 
 # Background
-bg_0 = Image.open("img\\bg.jpg")
-bck_pk = ImageTk.PhotoImage(bg_0.resize((450, 450)))
+bg_0 = Image.open("img\\bg8.jpg")
+bck_pk = ImageTk.PhotoImage(bg_0.resize((700, 400)))
 
-lbl = Label(scan, image=bck_pk, border=0)
+lbl = Label(regist, image=bck_pk, border=0)
 lbl.place(x=1, y=1)
 
-# profile
-box_2 = Frame(scan, width=390, height=390, bg='#010F57')
-box_2.place(x=30, y=30)
+# Logo
+box_2 = Frame(regist, width=300, height=360, bg='#010F57')
+box_2.place(x=350, y=20)
 
-# quit
-lg_btn = Button(box_2, bg="#010F57", bd=0, height=1, width=9, text="X", fg='white', font=('Arial', 15, 'bold'),
-                cursor='hand2', command=to_sign)
-lg_btn.place(x=310, y=1)
+box_3 = Frame(regist, width=300, height=360, bg='white')
+box_3.place(x=50, y=20)
 
-# To scan
-progress_label = Label(box_2, text="Scanning...", font=('Arial', 15, 'bold'), fg='white', bg="#010F57")
-progress_label.place(x=30, y=250)
+log_name = Label(box_2, text='Register', fg='White', bg='#010F57', font=('Arial', 18, 'bold'))
+log_name.place(x=100, y=10)
 
-progress_bar_width = 325
-progress_bar_height = 10
-progress_bar_x = 30
-progress_bar_y = 280
+log = Image.open("img\\reg.jpg")
+log_pk = ImageTk.PhotoImage(log.resize((320, 320)))
 
-canvas = Canvas(box_2, width=progress_bar_width, height=progress_bar_height, bg="white", highlightthickness=0)
-canvas.place(x=progress_bar_x, y=progress_bar_y)
+lbl = Label(box_3, image=log_pk, border=0, bg='#010F57')
+lbl.place(x=0, y=20)
 
-progress_bar = canvas.create_rectangle(0, 0, 0, progress_bar_height, fill="#38B6FF")
+username = StringVar()
+emails = StringVar()
+password = StringVar()
+c_password = StringVar()
 
+# User
+user_name = Label(box_2, text='Username:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
+user_name.place(x=20, y=100)
+usernm = Entry(box_2, textvariable=username, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'))
+usernm.place(x=20, y=120)
 
-def animate_progress():
-    global continue_scanning
-    if continue_scanning:
-        for i in range(progress_bar_width + 1):
-            canvas.coords(progress_bar, (0, 0, i, progress_bar_height))
-            scan.update()
-            time.sleep(0.01)
-            progress_label['text'] = 'Scanning... {}%'.format(int((i / progress_bar_width) * 100))
-        complete_scan()
+# Email
+email_name = Label(box_2, text='Email:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
+email_name.place(x=20, y=50)
+email = Entry(box_2, textvariable=emails, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'))
+email.place(x=20, y=70)
 
+# Password
+pass_name = Label(box_2, text='Password:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
+pass_name.place(x=20, y=150)
+passw = Entry(box_2, textvariable=password, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'),
+              show="*")
+passw.place(x=20, y=170)
+passw.bind("<KeyRelease>", lambda event: update_password_strength())
 
-animate_progress()
-scan.mainloop()
+#Confirm Password
+c_pass = Label(box_2, text='Confirm Password:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
+c_pass.place(x=20, y=200)
+c_passw = Entry(box_2, textvariable=c_password, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'),
+              show="*")
+c_passw.place(x=20, y=220)
+
+# Show password
+# Password Visibility Toggle Button
+show = Image.open("img\\show.jpg")
+show_pk = ImageTk.PhotoImage(show.resize((15, 12)))
+hide = Image.open("img\\hide.jpg")
+hide_pk = ImageTk.PhotoImage(hide.resize((15, 12)))
+vis_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=show_pk, command=show_pass)
+vis_button.place(x=214, y=171)
+
+# Create the password strength indicator label
+strength_label = Label(box_2, text="", font=('Arial', 8, 'bold'), bg='#010F57')
+strength_label.place_forget()
+
+# Button
+reg = Button(box_2, width=10, pady=5, text="Register", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
+             command=validate_inputs)
+reg.place(x=20, y=305)
+
+log = Button(box_2, width=10, pady=5, text="Login", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
+             command=to_sign)
+log.place(x=150, y=305)
+
+# Terms and Conditions/DPA Acceptance
+checks = BooleanVar()
+
+checks_button = Checkbutton(regist, variable=checks, onvalue=True, offvalue=False, bg='#010F57', bd=0)
+checks_button.place(x=365, y=271)
+
+text2 = Label(box_2, text="I agree to E.P.B.I.P", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
+text2.place(x=37, y=252)
+
+trm = Button(box_2, width=17, text='terms and conditions', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
+             font=('Arial', 8, 'bold', 'underline'), command=show_terms)
+trm.place(x=137, y=252)
+
+text3 = Label(box_2, text="and ", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
+text3.place(x=37, y=272)
+
+dpa = Button(box_2, width=10, text='Privacy Policy', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
+             font=('Arial', 8, 'bold', 'underline'))
+dpa.place(x=62, y=272)
+
+regist.mainloop()

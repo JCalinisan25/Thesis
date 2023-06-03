@@ -20,8 +20,10 @@ auth = firebase.auth()
 
 # Window
 regist = Tk()
-regist.title("Registration Page")
+regist.title("E.P.B.I.P")
 regist.geometry("700x400")
+regist.resizable(False, False)
+regist.iconbitmap(r'img\\logo.ico')
 
 # Back to login page
 def to_sign():
@@ -45,10 +47,11 @@ def validate_inputs():
     global email
     email_value = email.get()
     password = passw.get()
+    c_password = c_passw.get()
 
-    if usernm.get() == '' and email.get() == '' and password == '':
+    if usernm.get() == '' and email.get() == '' and password == '' and c_password == '':
         messagebox.showerror("Error", "No input in the field!")
-    elif usernm.get() == '' or email.get() == '' or password == '':
+    elif usernm.get() == '' or email.get() == '' or password == '' or c_password =='':
         messagebox.showerror("Error", "No input in other field!")
     elif not re.match(r"^(?=.*\d)(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
         messagebox.showerror("Error", "Password must meet the following criteria:\n"
@@ -56,6 +59,8 @@ def validate_inputs():
                              "• At least one digit\n"
                              "• At least one uppercase letter\n"
                              "• At least one punctuation mark.")
+    elif password != c_password:
+        messagebox.showerror("Error", "Passwords do not match!")
     elif not is_valid_email(email_value):
         messagebox.showerror("Error", "Invalid Email Address Format!\n(Example: Abcd@email.com)")
     elif not checks.get():
@@ -83,21 +88,37 @@ def validate_inputs():
         regist.destroy()
         os.system('verified.py')
 
-# PDF Terms and Conditions
+# PDF Terms and Conditions 
 def show_terms():
     pdf_file = "Terms_and_Conditions.pdf"
     webbrowser.open(pdf_file)
 
-# Password Visibility Toggle
+# PDF Data Privacy Policy
+def show_policy():
+    pdf_file = "Data_Privacy_Policy.pdf"
+    webbrowser.open(pdf_file)
+
+# Password Visibility Toggle for password
 def show_pass():
     passw["show"] = ""
     hid_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=hide_pk, command=hide_pass)
-    hid_button.place(x=519, y=125)
+    hid_button.place(x=214, y=171)
 
 def hide_pass():
     passw["show"] = "*"
     show_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=show_pk, command=show_pass)
-    show_button.place(x=519, y=125)
+    show_button.place(x=214, y=171)
+
+# Password Visibility Toggle for confirm password
+def cshow_pass():
+    c_passw["show"] = ""
+    chid_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=chide_pk, command=chide_pass)
+    chid_button.place(x=214, y=221)
+
+def chide_pass():
+    c_passw["show"] = "*"
+    cshow_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=cshow_pk, command=cshow_pass)
+    cshow_button.place(x=214, y=221)
 
 def update_password_strength():
     password = passw.get()
@@ -106,7 +127,7 @@ def update_password_strength():
     if len(password) == 0:
         strength_label.place_forget()  # Hide the strength label
     else:
-        strength_label.place(x=360, y=152)  # Show the strength label
+        strength_label.place(x=90, y=150)  # Show the strength label
 
         # Define regular expressions for different password strength levels
         strong_regex = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
@@ -114,11 +135,11 @@ def update_password_strength():
 
         # Check password strength using the regular expressions
         if re.match(strong_regex, password):
-            strength_label.config(text="Password Strength: Strong", fg="green")
+            strength_label.config(text="Strong Password", fg="green")
         elif re.match(medium_regex, password):
-            strength_label.config(text="Password Strength: Medium", fg="orange")
+            strength_label.config(text="Medium Password", fg="orange")
         else:
-            strength_label.config(text="Password Strength: Weak", fg="red")
+            strength_label.config(text="Weak Password", fg="red")
 
 def get_password_strength(password):
     if len(password) < 8:
@@ -129,54 +150,59 @@ def get_password_strength(password):
         return "Strong"
 
 # Background
-bg_0 = Image.open("img\\bg.jpg")
+bg_0 = Image.open("img\\bg8.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((700, 400)))
 
 lbl = Label(regist, image=bck_pk, border=0)
 lbl.place(x=1, y=1)
 
-# Header
-box_1 = Frame(regist, width=700, height=55, bg='#010F57')
-box_1.place(x=3, y=5)
-heading = Label(regist, text='REGISTER', fg='white', bg='#010F57', font=('Arial', 30, 'bold'))
-heading.place(x=250, y=5)
-
 # Logo
-box_2 = Frame(regist, width=555, height=290, bg='#010F57')
-box_2.place(x=70, y=80)
+box_2 = Frame(regist, width=300, height=360, bg='#010F57')
+box_2.place(x=350, y=20)
 
-logo = Image.open("img\\logoo.png")
-log_pk = ImageTk.PhotoImage(logo.resize((210, 205)))
+box_3 = Frame(regist, width=300, height=360, bg='white')
+box_3.place(x=50, y=20)
 
-lbl = Label(box_2, image=log_pk, border=0)
-lbl.place(x=5, y=15)
+log_name = Label(box_2, text='Register', fg='White', bg='#010F57', font=('Arial', 18, 'bold'))
+log_name.place(x=100, y=10)
 
-log_name = Label(box_2, text='E.P.B.I.P', fg='white', bg='#010F57', font=('Copperplate', 30, 'bold'))
-log_name.place(x=30, y=220)
+log = Image.open("img\\reg.jpg")
+log_pk = ImageTk.PhotoImage(log.resize((320, 320)))
+
+lbl = Label(box_3, image=log_pk, border=0, bg='#010F57')
+lbl.place(x=0, y=20)
 
 username = StringVar()
 emails = StringVar()
 password = StringVar()
+c_password = StringVar()
 
 # User
-user_name = Label(box_2, text='Username:', fg='white', bg='#010F57', font=('Arial', 17, 'bold'))
-user_name.place(x=225, y=23)
-usernm = Entry(box_2, textvariable=username, width=23, fg='black', border=1, bg='white', font=('Arial', 11, 'bold'))
-usernm.place(x=350, y=27)
+user_name = Label(box_2, text='Username:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
+user_name.place(x=20, y=100)
+usernm = Entry(box_2, textvariable=username, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'))
+usernm.place(x=20, y=120)
 
 # Email
-email_name = Label(box_2, text='Email Add.:', fg='white', bg='#010F57', font=('Arial', 18, 'bold'))
-email_name.place(x=212, y=70)
-email = Entry(box_2, textvariable=emails, width=23, fg='black', border=1, bg='white', font=('Arial', 11, 'bold'))
-email.place(x=350, y=75)
+email_name = Label(box_2, text='Email:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
+email_name.place(x=20, y=50)
+email = Entry(box_2, textvariable=emails, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'))
+email.place(x=20, y=70)
 
 # Password
-pass_name = Label(box_2, text='Password:', fg='white', bg='#010F57', font=('Arial', 18, 'bold'))
-pass_name.place(x=224, y=119)
-passw = Entry(box_2, textvariable=password, width=23, fg='black', border=1, bg='white', font=('Arial', 11, 'bold'),
+pass_name = Label(box_2, text='Password:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
+pass_name.place(x=20, y=150)
+passw = Entry(box_2, textvariable=password, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'),
               show="*")
-passw.place(x=350, y=123)
+passw.place(x=20, y=170)
 passw.bind("<KeyRelease>", lambda event: update_password_strength())
+
+#Confirm Password
+c_pass = Label(box_2, text='Confirm Password:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
+c_pass.place(x=20, y=200)
+c_passw = Entry(box_2, textvariable=c_password, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'),
+              show="*")
+c_passw.place(x=20, y=220)
 
 # Show password
 # Password Visibility Toggle Button
@@ -185,40 +211,47 @@ show_pk = ImageTk.PhotoImage(show.resize((15, 12)))
 hide = Image.open("img\\hide.jpg")
 hide_pk = ImageTk.PhotoImage(hide.resize((15, 12)))
 vis_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=show_pk, command=show_pass)
-vis_button.place(x=519, y=125)
+vis_button.place(x=214, y=171)
+
+chow = Image.open("img\\show.jpg")
+cshow_pk = ImageTk.PhotoImage(show.resize((15, 12)))
+chide = Image.open("img\\hide.jpg")
+chide_pk = ImageTk.PhotoImage(hide.resize((15, 12)))
+cvis_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=cshow_pk, command=cshow_pass)
+cvis_button.place(x=214, y=221)
 
 # Create the password strength indicator label
 strength_label = Label(box_2, text="", font=('Arial', 8, 'bold'), bg='#010F57')
 strength_label.place_forget()
 
 # Button
-reg = Button(box_2, width=9, pady=6, text="Register", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
+reg = Button(box_2, width=10, pady=5, text="Register", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
              command=validate_inputs)
-reg.place(x=300, y=185)
+reg.place(x=20, y=305)
 
-log = Button(box_2, width=10, pady=6, text="Login", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
+log = Button(box_2, width=10, pady=5, text="Login", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
              command=to_sign)
-log.place(x=410, y=185)
+log.place(x=150, y=305)
 
 
 # Terms and Conditions/DPA Acceptance
 checks = BooleanVar()
 
 checks_button = Checkbutton(regist, variable=checks, onvalue=True, offvalue=False, bg='#010F57', bd=0)
-checks_button.place(x=328, y=321)
+checks_button.place(x=365, y=271)
 
 text2 = Label(box_2, text="I agree to E.P.B.I.P", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
-text2.place(x=280, y=242)
+text2.place(x=37, y=252)
 
 trm = Button(box_2, width=17, text='terms and conditions', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
              font=('Arial', 8, 'bold', 'underline'), command=show_terms)
-trm.place(x=377, y=242)
+trm.place(x=137, y=252)
 
 text3 = Label(box_2, text="and ", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
-text3.place(x=497, y=242)
+text3.place(x=37, y=272)
 
-dpa = Button(box_2, width=14, text='Privacy Policy', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
-             font=('Arial', 8, 'bold', 'underline'))
-dpa.place(x=268, y=258)
+dpa = Button(box_2, width=10, text='Privacy Policy', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
+             font=('Arial', 8, 'bold', 'underline'), command=show_policy)
+dpa.place(x=62, y=272)
 
 regist.mainloop()

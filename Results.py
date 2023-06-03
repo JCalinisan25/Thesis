@@ -6,8 +6,6 @@ from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import os
-
-import os
 import base64
 import email
 import spampy
@@ -20,9 +18,6 @@ import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 
 # Input data files are available in the read-only "../input/" directory
 # For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
-
-
-import os
 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -75,8 +70,8 @@ def main():
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    """if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)"""
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -202,8 +197,10 @@ def printhi(emails):
 
 # window
 result = Tk()
-result.title("Detailed Results")
+result.title("E.P.B.I.P")
 result.geometry("550x600")
+result.resizable(False, False)
+result.iconbitmap(r'img\\logo.ico')
 
 
 def dash():
@@ -212,7 +209,7 @@ def dash():
 
 
 # Background
-bg_0 = Image.open("img\\bg.jpg")
+bg_0 = Image.open("img\\bg8.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((550, 600)))
 
 lbl = Label(result, image=bck_pk, border=0)
@@ -274,7 +271,7 @@ Label(url, text="The URL has been found a phishing site.", fg='white', width=75,
 # History Tab
 hist.configure(background='#010F57')
 bg = ttk.Style
-table = ttk.Treeview(hist, columns=("Date", "Name", "Source", "Response"), show="headings")
+table = ttk.Treeview(hist, columns=("Date", "Subject", "Response"), show="headings")
 # table.pack()
 
 # Calling pack method w.r.to treeview
@@ -294,15 +291,11 @@ verscrlbar.pack(side='bottom', fill='x')
 table.configure(xscrollcommand=verscrlbar.set)
 
 table.heading("Date", text="Date")
-table.heading("Name", text="Name")
-table.heading("Source", text="Source")
+table.heading("Subject", text="Subject")
 table.heading("Response", text="Response")
-table.insert(parent="", index=0, iid=0, text="Row 1", values=("03/15/2023", "Click Now!", "Phishing", "Blocked"))
-table.insert(parent="", index=1, iid=1, text="Row 2", values=("03/18/2023", "Click to Win!", "Phishing", "Blocked"))
 table.column("Date", minwidth=100)
-table.column("Name", width=200)
-table.column("Source", width=1100)
-table.column("Response", width=400)
+table.column("Subject", width=200)
+table.column("Response", width=100)
 table.place(x=10, y=10)
 
 # Chart Tab

@@ -2,7 +2,7 @@ import os
 from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import messagebox
-import pyrebase
+import pyrebase, requests, json
 
 config = {
 'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
@@ -19,8 +19,10 @@ auth = firebase.auth()
 
 # window
 forgot = Tk()
-forgot.title("Forgot Password Page")
+forgot.title("E.P.B.I.P")
 forgot.geometry("400x400")
+forgot.resizable(False, False)
+forgot.iconbitmap(r'img\\logo.ico')
 
 
 def on_in(e):
@@ -40,19 +42,26 @@ def log():
     forgot.destroy()
     os.system("Login.py")
 
+# Function to reset password
 def reset_password():
     email = f_pass.get()
+
     try:
-        # Attempt to send the password reset email.
         auth.send_password_reset_email(email)
-        messagebox.showinfo("Success", "Password reset has been sent to your email address!")
+        messagebox.showinfo("Success", "Password reset email sent successfully!")
         forgot.destroy()
-        os.system('Login.py')
-    except:
-        messagebox.showerror("Error", "Failed to send reset password email")
+        os.system("Login.py")
+    except requests.exceptions.HTTPError as e:
+        error_json = e.args[0].response.text
+        error_message = json.loads(error_json)['error']['message']
+        
+        if error_message == 'EMAIL_NOT_FOUND':
+            messagebox.showerror("Error", "Email is not registered!")
+        else:
+            messagebox.showerror("Error", "An error occurred while resetting the password.")
 
 # Background
-bg_0 = Image.open("img\\bg.jpg")
+bg_0 = Image.open("img\\bg8.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((400, 400)))
 
 lbl = Label(forgot, image=bck_pk, border=0)

@@ -1,97 +1,78 @@
 from tkinter import *
-from tkinter import ttk
-from tkinter.ttk import Progressbar
 from PIL import Image, ImageTk
 from tkinter import messagebox
-import os
+import os, time
 
 # window
 scan = Tk()
-scan.title("Scanning Page")
+scan.title("E.P.B.I.P")
 scan.geometry("450x450")
+scan.resizable(False, False)
+scan.iconbitmap(r'img\\logo.ico')
+
+# Flag to indicate whether to continue scanning or not
+continue_scanning = True
 
 
-def tosign():
+def to_sign():
+    global continue_scanning
+    if messagebox.askyesno("Confirmation", "Are you sure you want to quit while scanning?"):
+        continue_scanning = False
+        scan.destroy()
+        os.system('Dashboard.py')
+
+
+def complete_scan():
+    messagebox.showinfo("Successful", "Scan completed successfully!")
     scan.destroy()
-    os.system('Login.py')
+    os.system('Results.py')
 
 
 # Background
-bg_0 = Image.open("img\\bg.jpg")
+bg_0 = Image.open("img\\bg8.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((450, 450)))
 
 lbl = Label(scan, image=bck_pk, border=0)
 lbl.place(x=1, y=1)
 
-# Header
-box_1 = Frame(scan, width=500, height=55, bg='#010F57')
-box_1.place(x=3, y=5)
-heading = Label(scan, text='DASHBOARD', fg='white', bg='#010F57', font=('Arial', 30, 'bold'))
-heading.place(x=100, y=5)
-
 # profile
-box_2 = Frame(scan, width=390, height=350, bg='#010F57')
-box_2.place(x=30, y=80)
+box_2 = Frame(scan, width=390, height=390, bg='#010F57')
+box_2.place(x=30, y=30)
 
-person = Image.open("img\\person.JPG")
-per_pk = ImageTk.PhotoImage(person.resize((105, 110)))
-
-lbl = Label(box_2, image=per_pk, border=0)
-lbl.place(x=10, y=5)
-
-edit = Image.open("img\\edit.PNG")
-ed_pk = ImageTk.PhotoImage(edit.resize((18, 18)))
-
-lbl = Label(scan, image=ed_pk, border=0)
-lbl.place(x=35, y=191)
-
-user = Label(box_2, text='Username', fg='white', bg='#010F57', font=('Arial', 11, 'bold'))
-user.place(x=20, y=110)
-
-# logout
-log = Image.open("img\\logout.JPG")
-lg_pk = ImageTk.PhotoImage(log.resize((30, 25)))
-
-lbl = Label(scan, image=lg_pk, border=0)
-lbl.place(x=300, y=91)
-
-lg_btn = Button(box_2, bg="#010F57", bd=0, height=1, width=9, text="   Logout", fg='white', font=('Arial', 15, 'bold'),
-                cursor='hand2', command=tosign)
-lg_btn.place(x=270, y=5)
+# quit
+lg_btn = Button(box_2, bg="#010F57", bd=0, height=1, width=1, text="X", fg='white', font=('Arial', 15, 'bold'),
+                cursor='hand2', command=to_sign)
+lg_btn.place(x=365, y=1)
 
 # To scan
-progress_label = Label(box_2, text="Scanning...", font=('Arial', 15, 'bold'), fg='white', bg="#010F57")
-progress_label.place(x=30, y=200)
+progress_label_text = StringVar()
+progress_label_text.set("Scanning... 0%")
+progress_label = Label(box_2, textvariable=progress_label_text, font=('Arial', 15, 'bold'), fg='white', bg="#010F57")
+progress_label.place(x=30, y=250)
 
-progress = ttk.Style()
-progress.theme_use('clam')
-progress.configure("red.Horizontal.TProgressbar", bg='#010F57')
+progress_bar_width = 325
+progress_bar_height = 10
+progress_bar_x = 30
+progress_bar_y = 280
+ 
+canvas = Canvas(box_2, width=progress_bar_width, height=progress_bar_height, bg="white", highlightthickness=0)
+canvas.place(x=progress_bar_x, y=progress_bar_y)
 
-progress = Progressbar(box_2, orient=HORIZONTAL, length=330, mode='determinate', style="red.Horizontal.TProgressbar")
-progress.place(x=30, y=240)
+progress_bar = canvas.create_rectangle(0, 0, 0, progress_bar_height, fill="#38B6FF")
 
+def update_progress():
+    global continue_scanning
+    if continue_scanning:
+        progress = 0
+        while progress <= progress_bar_width:
+            canvas.coords(progress_bar, (0, 0, progress, progress_bar_height))
+            progress_label_text.set(f"Scanning... {int((progress / progress_bar_width) * 100)}%")
+            scan.update()
+            time.sleep(0.09)
+            progress += 1
+        complete_scan()
+        continue_scanning = False
 
-def top():
-    messagebox.showinfo("Scan", "Scan Successfully!")
-    scan.destroy()
-    os.system("Results.py")
-
-
-i = 0
-
-
-def load():
-    global i
-    if i <= 50:
-        txt = 'Scanning... ' + (str(2 * i) + '%')
-        progress_label.config(text=txt)
-        progress_label.after(100, load)
-        progress['value'] = 2 * i
-        i += 1
-
-    else:
-        top()
-
-
-load()
+# Delay the execution of the update_progress() function
+scan.after(100, update_progress)
 scan.mainloop()
