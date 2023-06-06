@@ -25,6 +25,20 @@ regist.geometry("700x400")
 regist.resizable(False, False)
 regist.iconbitmap(r'img\\logo.ico')
 
+# Set the position of the terminal window
+def center_window(window):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    window_width = window.winfo_width()
+    window_height = window.winfo_height()
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 3
+    window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+# Center the tkinter window
+center_window(regist)
+
 # Back to login page
 def to_sign():
     regist.destroy()
@@ -49,20 +63,26 @@ def validate_inputs():
     password = passw.get()
     c_password = c_passw.get()
 
-    if usernm.get() == '' and email.get() == '' and password == '' and c_password == '':
-        messagebox.showerror("Error", "No input in the field!")
-    elif usernm.get() == '' or email.get() == '' or password == '' or c_password =='':
-        messagebox.showerror("Error", "No input in other field!")
-    elif not re.match(r"^(?=.*\d)(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
-        messagebox.showerror("Error", "Password must meet the following criteria:\n"
-                             "• Must be at least 8 characters long\n"
-                             "• At least one digit\n"
-                             "• At least one uppercase letter\n"
-                             "• At least one punctuation mark.")
-    elif password != c_password:
-        messagebox.showerror("Error", "Passwords do not match!")
+    if email.get() == '' and usernm.get() == '' and password == '' and c_password == '':
+        messagebox.showerror('Error','Please provide the necessary information in all the fields!')
+    elif email.get() == '':
+        messagebox.showerror("Error", "Please provide an email address!")
     elif not is_valid_email(email_value):
         messagebox.showerror("Error", "Invalid Email Address Format!\n(Example: Abcd@email.com)")
+    elif usernm.get() == '':
+        messagebox.showerror("Error", "Please provide a username!")
+    elif password == '':
+        messagebox.showerror("Error", "Please provide a password!")
+    elif not re.match(r"^(?=.*\d)(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
+        messagebox.showerror("Error", "Password must meet the following criteria:\n"
+                             "• Must be at least 8 characters long.\n"
+                             "• At least one digit.\n"
+                             "• At least one uppercase letter.\n"
+                             "• At least one punctuation mark.")
+    elif c_password == '':
+        messagebox.showerror("Error", "Please confirm your password!")
+    elif password != c_password:
+        messagebox.showerror("Error", "Password don't match!")
     elif not checks.get():
         messagebox.showerror("Error", "Please accept the terms and conditions!")
     else:
@@ -83,8 +103,8 @@ def validate_inputs():
             "username": usernm.get(),
             "email": email_value
         }
+        messagebox.showinfo('Success','Register Successfully')
         database.child("Users").push(data)
-        messagebox.showinfo("Success", "Data saved successfully!")
         regist.destroy()
         os.system('verified.py')
 
@@ -135,7 +155,7 @@ def update_password_strength():
 
         # Check password strength using the regular expressions
         if re.match(strong_regex, password):
-            strength_label.config(text="Strong Password", fg="green")
+            strength_label.config(text="Strong Password", fg="#00BF63")
         elif re.match(medium_regex, password):
             strength_label.config(text="Medium Password", fg="orange")
         else:
@@ -148,6 +168,18 @@ def get_password_strength(password):
         return "Medium"
     else:
         return "Strong"
+    
+def check_password_match(event):
+    password = passw.get()
+    c_password = c_passw.get()
+
+    if password and c_password:
+        if password == c_password:
+            cpass_indi.config(text="Password Match", fg="#00BF63")
+        else:
+            cpass_indi.config(text="Don't Match", fg="red")
+    else:
+        cpass_indi.config(text='')
 
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
@@ -203,6 +235,8 @@ c_pass.place(x=20, y=200)
 c_passw = Entry(box_2, textvariable=c_password, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'),
               show="*")
 c_passw.place(x=20, y=220)
+c_passw.bind("<KeyRelease>", check_password_match)
+
 
 # Show password
 # Password Visibility Toggle Button
@@ -221,8 +255,12 @@ cvis_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=cshow_p
 cvis_button.place(x=214, y=221)
 
 # Create the password strength indicator label
-strength_label = Label(box_2, text="", font=('Arial', 8, 'bold'), bg='#010F57')
+strength_label = Label(box_2, text="", font=('Arial', 9, 'bold'), bg='#010F57')
 strength_label.place_forget()
+
+# Create the confirm pasword indicator label
+cpass_indi = Label(box_2, text="", font=('Arial', 9, 'bold'), bg='#010F57')
+cpass_indi.place(x=135, y=200)
 
 # Button
 reg = Button(box_2, width=10, pady=5, text="Register", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
@@ -237,21 +275,24 @@ log.place(x=150, y=305)
 # Terms and Conditions/DPA Acceptance
 checks = BooleanVar()
 
-checks_button = Checkbutton(regist, variable=checks, onvalue=True, offvalue=False, bg='#010F57', bd=0)
+checks_button = Checkbutton(regist, variable=checks, onvalue=True, offvalue=False, bg='#010F57', bd=0,
+                            activebackground='#010F57')
 checks_button.place(x=365, y=271)
 
 text2 = Label(box_2, text="I agree to E.P.B.I.P", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
 text2.place(x=37, y=252)
 
 trm = Button(box_2, width=17, text='terms and conditions', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
-             font=('Arial', 8, 'bold', 'underline'), command=show_terms)
+             font=('Arial', 8, 'bold', 'underline'), command=show_terms, activebackground='#010F57',
+             activeforeground='#C64CCD')
 trm.place(x=137, y=252)
 
 text3 = Label(box_2, text="and ", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
 text3.place(x=37, y=272)
 
 dpa = Button(box_2, width=10, text='Privacy Policy', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
-             font=('Arial', 8, 'bold', 'underline'), command=show_policy)
+             font=('Arial', 8, 'bold', 'underline'), command=show_policy, activebackground='#010F57',
+             activeforeground='#C64CCD')
 dpa.place(x=62, y=272)
 
 regist.mainloop()

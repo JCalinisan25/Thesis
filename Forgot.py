@@ -24,6 +24,19 @@ forgot.geometry("400x400")
 forgot.resizable(False, False)
 forgot.iconbitmap(r'img\\logo.ico')
 
+# Set the position of the terminal window
+def center_window(window):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    window_width = window.winfo_width()
+    window_height = window.winfo_height()
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 3
+    window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+# Center the tkinter window
+center_window(forgot)
 
 def on_in(e):
     if f_pass.get() == "Enter Email":
@@ -45,20 +58,23 @@ def log():
 # Function to reset password
 def reset_password():
     email = f_pass.get()
+    if email == "Enter Email" or email == "":
+        messagebox.showerror("Error", "Please enter your email!")
+    else:
 
-    try:
-        auth.send_password_reset_email(email)
-        messagebox.showinfo("Success", "Password reset email sent successfully!")
-        forgot.destroy()
-        os.system("Login.py")
-    except requests.exceptions.HTTPError as e:
-        error_json = e.args[0].response.text
-        error_message = json.loads(error_json)['error']['message']
+        try:
+            auth.send_password_reset_email(email)
+            messagebox.showinfo("Success", "Password reset request was sent successfully.")
+            forgot.destroy()
+            os.system("Login.py")
+        except requests.exceptions.HTTPError as e:
+            error_json = e.args[0].response.text
+            error_message = json.loads(error_json)['error']['message']
         
-        if error_message == 'EMAIL_NOT_FOUND':
-            messagebox.showerror("Error", "Email is not registered!")
-        else:
-            messagebox.showerror("Error", "An error occurred while resetting the password.")
+            if error_message == 'EMAIL_NOT_FOUND':
+                messagebox.showerror("Error", "Email is not registered!")
+            else:
+                messagebox.showerror("Error", "Invalid Email Address!")
 
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
@@ -79,18 +95,18 @@ lbl = Label(box_1, image=log_pk, border=0)
 lbl.place(x=150, y=2)
 
 log_name = Label(box_1, text='E.P.B.I.P', fg='white', bg='#010F57', font=('Copperplate', 18, 'bold'))
-log_name.place(x=145, y=90)
+log_name.place(x=130, y=90)
 
 # Content
 box_2 = Frame(box_1, width=450, height=3, bg='white')
 box_2.place(x=1, y=120)
 
-heading = Label(box_1, text='Trouble Logging In?', fg='white', bg='#010F57', font=('Arial', 16, 'bold'))
+heading = Label(box_1, text='Forgotten your password?', fg='white', bg='#010F57', font=('Arial', 16, 'bold'))
 heading.place(x=5, y=125)
 
-info = Label(box_1, text="Please enter your email to send link \nto get back into your account.", fg='white',
+info = Label(box_1, text="Enter your email to reset your password.", fg='white',
              bg='#010F57', font=('Arial', 11, 'bold'))
-info.place(x=60, y=160)
+info.place(x=40, y=160)
 
 f_pass = Entry(box_1, width=35, fg='grey', border=1, bg='white', font=('Arial', 12, 'bold'), show="")
 f_pass.place(x=27, y=210)
@@ -99,7 +115,7 @@ f_pass.bind('<FocusIn>', on_in)
 f_pass.bind('<FocusOut>', on_out)
 
 # button
-btn1 = Button(box_1, width=15, pady=5, text="Send Login Link", bg='white', fg='black', cursor='hand2', border=0,
+btn1 = Button(box_1, width=15, pady=5, text="Reset Password", bg='white', fg='black', cursor='hand2', border=0,
               font=('Arial', 12, 'bold'), command=reset_password)
 btn1.place(x=110, y=250)
 

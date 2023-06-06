@@ -1,220 +1,313 @@
 from tkinter import *
-from tkinter import messagebox
-from PIL import Image, ImageTk
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import auth, db
-import os, webbrowser, re
+from PIL import Image, ImageTk, ImageDraw
+from tkinter import messagebox, filedialog
+import os, pyrebase, json
 
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate('credential.json')
-firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app/'
-})
-database = db.reference()
+config = {
+    'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
+'authDomain': "epbip-17adb.firebaseapp.com",
+'databaseURL': "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
+'projectId': "epbip-17adb",
+'storageBucket': "epbip-17adb.appspot.com",
+'messagingSenderId': "612338602406",
+'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
+'measurementId': "G-J1896JVRT9"
+}
 
-# Window
-regist = Tk()
-regist.title("E.P.B.I.P")
-regist.geometry("700x400")
-regist.resizable(False, False)
-regist.iconbitmap(r'img\\logo.ico')
+firebase = pyrebase.initialize_app(config)
+database = firebase.database()
+auth = firebase.auth()
 
-# Back to login page
-def to_sign():
-    regist.destroy()
+# window
+dash = Tk()
+dash.title("E.P.B.I.P")
+dash.geometry("450x450")
+dash.resizable(False, False)
+dash.iconbitmap(r'img\\logo.ico')
+
+# Function to center the tkinter window
+def center_window(window):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    window_width = window.winfo_width()
+    window_height = window.winfo_height()
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 3
+    window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+# Center the tkinter window
+center_window(dash)
+
+def tosign():
+    dash.destroy()
     os.system('Login.py')
 
-# Show password
-def show_password():
-    if passw.cget('show') == '*':
-        passw.config(show='')
-    else:
-        passw.config(show='*')
+def toresult():
+    dash.destroy()
+    os.system('Results.py')
 
-def is_valid_email(email):
-    # Use regex pattern for email validation
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email)
+def toscan():
+    dash.destroy()
+    os.system('scan.py')
 
-# Validation of username and password
-def validate_inputs():
-    global email
-    email_value = email.get()
-    password = passw.get()
-    c_password = c_passw.get()
+def home():
+    if 'f2' in globals():
+        f2.destroy()
+    elif 'f3' in globals():
+        f3.destroy()
+    elif 'f4' in globals():
+        f4.destroy()
 
-    if usernm.get() == '' and email.get() == '' and password == '' and c_password == '':
-        messagebox.showerror("Error", "No input in the field!")
-    elif usernm.get() == '' or email.get() == '' or password == '' or c_password =='':
-        messagebox.showerror("Error", "No input in other field!")
-    elif not re.match(r"^(?=.*\d)(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
-        messagebox.showerror("Error", "Password must meet the following criteria:\n"
-                             "• Must be at least 8 characters long\n"
-                             "• At least one digit\n"
-                             "• At least one uppercase letter\n"
-                             "• At least one punctuation mark.")
-    elif password != c_password:
-        messagebox.showerror("Error", "Passwords do not match!")
-    elif not is_valid_email(email_value):
-        messagebox.showerror("Error", "Invalid Email Address Format!\n(Example: Abcd@email.com)")
-    elif not checks.get():
-        messagebox.showerror("Error", "Please accept the terms and conditions!")
-    else:
+    global box_2
+    box_2 = Frame(dash, width=415, height=415, bg='#010F57')
+    box_2.place(x=20, y=20)
+
+    lbl = Label(box_2, image=per_pk, border=0)
+    lbl.place(x=160, y=15)
+
+    brgr_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu)
+    brgr_btn.place(x=10, y=5)
+
+    username = Label(box_2, text=username_label_text, fg='white', bg='#010F57', font=('Arial', 15, 'bold'))
+    username.place(x=150, y=120)
+
+    lg_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=lg_pk, cursor='hand2', command=tosign)
+    lg_btn.place(x=370, y=5)
+
+    sc_btn = Button(box_2, image=scan_btn, width=300, height=90, bg="#021976", bd=0, cursor='hand2', command=toscan)
+    sc_btn.place(x=50, y=170)
+
+    rp_btn = Button(box_2, image=rep_btn, width=300, height=90, bg="#021976", bd=0, cursor='hand2', command=toresult)
+    rp_btn.place(x=50, y=280)
+
+
+def profile():
+    global f2, profile_image
+    f1.destroy()
+    f2 = Frame(box_2, width=415, height=415, bg='#010F57')
+    f2.place(x=0, y=0)
+    brgr_btn = Button(f2, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu)
+    brgr_btn.place(x=10, y=5)
+
+    def exit():
+        f2.destroy()
+        home()
+
+    close = Button(f2, bg="#010F57", bd=0, height=1, width=1, text="X", fg='white', font=('Arial', 15, 'bold'),
+                   cursor='hand2', command=exit)
+    close.place(x=390, y=5)
+
+    # Select and display image
+    # Select and display image
+    def select_image():
+        global profile_image
+        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png")])
+        if file_path:
+            profile_image = Image.open(file_path)
+            profile_image = profile_image.resize((95, 100))
+        
+        # Create a circular mask
+            mask = Image.new("L", (95, 100), 255)
+            draw = ImageDraw.Draw(mask)
+            draw.ellipse((0, 0, 95, 100), fill=255)
+        
+        # Apply the circular mask to the image
+            profile_image = ImageTk.PhotoImage(Image.composite(profile_image, Image.new("RGB", profile_image.size, (1, 15, 87, 0)), mask))
+        
+        # Configure the image for the profile_photo label
+            profile_photo.config(image=profile_image)
+            profile_photo.image = profile_image
+
+
+    select_btn = Button(f2, text="Select Image", bg="#021976", fg="white", bd=0, cursor="hand2",
+                        command=select_image, font=('Arial', 12, 'bold'))
+    select_btn.place(x=180, y=140)
+
+    profile_photo = Label(f2, image=per_pk, border=0)
+    profile_photo.place(x=160, y=15)
+
+    # Change username and password
+    def change_credentials():
+        """new_username = new_username_entry.get().strip()
+
+        if new_username == "":
+            messagebox.showerror("Error", "Please enter a new username.")
+            return"""
+
         try:
-            user = auth.create_user(email=email_value, password=password)
-        except auth.EmailAlreadyExistsError:
-            messagebox.showerror("Error", "This email address is already in use!")
-            return
+            """user = auth.current_user  # Retrieve current user information
+            # Change username
+            database.child("Users").child(user["localId"]).update({"username": new_username})
+            messagebox.showinfo("Success", "Username has been updated.")
+            new_username_entry.delete(0, END)"""
+
+            # Update the selected profile image
+            if 'profile_image' in globals() and profile_image:
+            # Display the selected profile image on the person label
+                person_label.config(image=profile_image)
+                person_label.image = profile_image
+                messagebox.showinfo("Success", "Update Successully")
         except Exception as e:
             messagebox.showerror("Error", str(e))
-            return
 
-        # Send email verification
-        auth.generate_email_verification_link(user.email)
-        
-        data = {
-            "username": usernm.get(),
-            "email": email_value
-        }
-        database.child("Users").push(data)
-        
-        messagebox.showinfo("Success", "Registration successful! Please check your email for verification.")
-        regist.destroy()
-        os.system('verified.py')
+    """# Username label and entry
+    username_label = Label(f2, text="New Username:", fg='white', bg='#010F57', font=('Arial', 12, 'bold'))
+    username_label.place(x=40, y=180)
 
-# PDF Terms and Conditions
-def show_terms():
-    pdf_file = "Terms_and_Conditions.pdf"
-    webbrowser.open(pdf_file)
+    new_username_entry = Entry(f2, width=30)
+    new_username_entry.place(x=180, y=180)
+"""
+    # Change credentials button
+    change_credentials_btn = Button(f2, text="Update", width=15, bg="#021976", fg="white", bd=0, cursor="hand2",
+                                    command=change_credentials, font=('Arial', 12, 'bold'))
+    change_credentials_btn.place(x=180, y=220)
 
-# Password Visibility Toggle for password
-def show_pass():
-    passw["show"] = ""
-    hid_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=hide_pk, command=hide_pass)
-    hid_button.place(x=214, y=171)
 
-def hide_pass():
-    passw["show"] = "*"
-    show_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=show_pk, command=show_pass)
-    show_button.place(x=214, y=171)
+def manual():
+    global f3
+    f1.destroy()
+    f3=Frame(box_2,width=415, height=415,bg='#010F57')
+    f3.place(x=0, y=0)
+    l3=Label(f3,text='Acer',fg='white',bg='white')
+    l3.config(font=('Comic Sans MS',90))
+    l3.place(x=290,y=150-45)
+    brgr_btn = Button(f3, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu)
+    brgr_btn.place(x=10, y=5)
+   
 
-def update_password_strength():
-    password = passw.get()
-    strength_label.config(fg='white')  # Reset the color to white
+def about():
+    global f4
+    f1.destroy()
+    f4=Frame(box_2,width=415, height=415,bg='#010F57')
+    f4.place(x=0, y=0)
+    l4=Label(f4,text='Dell',fg='white',bg='white')
+    l4.config(font=('Comic Sans MS',90))
+    l4.place(x=320,y=150-45)
+    brgr_btn = Button(f4, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu)
+    brgr_btn.place(x=10, y=5)
 
-    if len(password) == 0:
-        strength_label.place_forget()  # Hide the strength label
-    else:
-        strength_label.place(x=90, y=150)  # Show the strength label
+def toggle_menu():
+    global f1
+    f1=Frame(box_2,width=180,height=400,bg='#021976')
+    f1.place(x=5,y=5)
+    l0=Frame(f1,width=146,height=2,bg='white')
+    l0.place(x=0,y=82)
+    l1=Frame(f1,width=146,height=2,bg='white')
+    l1.place(x=0,y=122)
+    l2=Frame(f1,width=146,height=2,bg='white')
+    l2.place(x=0,y=162)
+    l3=Frame(f1,width=146,height=2,bg='white')
+    l3.place(x=0,y=389)
 
-        # Define regular expressions for different password strength levels
-        strong_regex = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-        medium_regex = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$"
+    #buttons
+    def bttn(x,y,text,bcolor,fcolor,cmd):
+     
+        def on_entera(e):
+            myButton1['background'] = bcolor #ffcc66
+            myButton1['foreground']= 'white'  #000d33
 
-        # Check password strength using the regular expressions
-        if re.match(strong_regex, password):
-            strength_label.config(text="Strong Password", fg="green")
-        elif re.match(medium_regex, password):
-            strength_label.config(text="Medium Password", fg="orange")
-        else:
-            strength_label.config(text="Weak Password", fg="red")
+        def on_leavea(e):
+            myButton1['background'] = fcolor
+            myButton1['foreground']= 'white'
+
+        myButton1 = Button(f1,text=text,
+                       width=20,
+                       height=2,
+                       fg='white',
+                       border=0,
+                       bg=fcolor,
+                       activeforeground='white',
+                       activebackground=bcolor,
+                       font=('Arial', 9, 'bold'),           
+                        command=cmd)
+                      
+        myButton1.bind("<Enter>", on_entera)
+        myButton1.bind("<Leave>", on_leavea)
+
+        myButton1.place(x=x,y=y)
+
+    bttn(0,45,'Home','#0f9d9a','#021976',home)
+    bttn(0,85,'Profile','#0f9d9a','#021976',profile)
+    bttn(0,125,'User Manual','#0f9d9a','#021976',manual)
+    bttn(0,350,'About Us','#0f9d9a','#021976',about)
+
+    #exit
+    def dele():
+        f1.destroy()
+
+    close = Button(f1, bg="#021976", bd=0, height=1, width=1, text="X", fg='white', font=('Arial', 15, 'bold'),
+                cursor='hand2', command=dele)
+    close.place(x=5, y=1)
 
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
-bck_pk = ImageTk.PhotoImage(bg_0.resize((700, 400)))
+bck_pk = ImageTk.PhotoImage(bg_0.resize((450, 450)))
 
-lbl = Label(regist, image=bck_pk, border=0)
-lbl.place(x=1, y=1)
+lbl1 = Label(dash, image=bck_pk, border=0)
+lbl1.place(x=1, y=1)
 
-# Logo
-box_2 = Frame(regist, width=300, height=360, bg='#010F57')
-box_2.place(x=350, y=20)
 
-box_3 = Frame(regist, width=300, height=360, bg='white')
-box_3.place(x=50, y=20)
+# profile
+box_2 = Frame(dash, width=415, height=415, bg='#010F57')
+box_2.place(x=20, y=20)
 
-log_name = Label(box_2, text='Register', fg='White', bg='#010F57', font=('Arial', 18, 'bold'))
-log_name.place(x=100, y=10)
+person = Image.open("img\\person.JPG")
+per_pk = ImageTk.PhotoImage(person.resize((95, 100)))
 
-log = Image.open("img\\reg.jpg")
-log_pk = ImageTk.PhotoImage(log.resize((320, 320)))
+person_label = Label(box_2, image=per_pk, border=0)
+person_label.place(x=160, y=15)
 
-lbl = Label(box_3, image=log_pk, border=0, bg='#010F57')
-lbl.place(x=0, y=20)
+brgr = Image.open("img\\hamburger.png")
+brgr_pk = ImageTk.PhotoImage(brgr.resize((35, 35)))
 
-username = StringVar()
-emails = StringVar()
-password = StringVar()
-c_password = StringVar()
+lbl3 = Label( image=brgr_pk)
 
-# User
-user_name = Label(box_2, text='Username:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
-user_name.place(x=20, y=100)
-usernm = Entry(box_2, textvariable=username, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'))
-usernm.place(x=20, y=120)
+brgr_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu)
+brgr_btn.place(x=10, y=5)
 
-# Email
-email_name = Label(box_2, text='Email:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
-email_name.place(x=20, y=50)
-email = Entry(box_2, textvariable=emails, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'))
-email.place(x=20, y=70)
+# Get the email from the login process
+try:
+    with open('user.json', 'r') as file:
+        user_info = json.load(file)
+        email = user_info['email']
+except FileNotFoundError:
+    messagebox.showerror("Error", "No user is signed in!")
+    email = ""
 
-# Password
-pass_name = Label(box_2, text='Password:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
-pass_name.place(x=20, y=150)
-passw = Entry(box_2, textvariable=password, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'),
-              show="*")
-passw.place(x=20, y=170)
-passw.bind("<KeyRelease>", lambda event: update_password_strength())
+# Retrieve username from Firebase Realtime Database based on the email
+users = database.child("Users").get()
+username = "username"
+for user in users.each():
+    if user.val()['email'] == email:
+        username = user.val()['username']
+        break
 
-#Confirm Password
-c_pass = Label(box_2, text='Confirm Password:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
-c_pass.place(x=20, y=200)
-c_passw = Entry(box_2, textvariable=c_password, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'),
-              show="*")
-c_passw.place(x=20, y=220)
+username_label_text = f"Hi, {username}"
+user = Label(box_2, text=username_label_text, fg='white', bg='#010F57', font=('Arial', 15, 'bold'))
+user.place(x=150, y=120)
 
-# Show password
-# Password Visibility Toggle Button
-show = Image.open("img\\show.jpg")
-show_pk = ImageTk.PhotoImage(show.resize((15, 12)))
-hide = Image.open("img\\hide.jpg")
-hide_pk = ImageTk.PhotoImage(hide.resize((15, 12)))
-vis_button = Button(box_2, width=17, height=16, bg='white', bd=0, image=show_pk, command=show_pass)
-vis_button.place(x=214, y=171)
+# logout
+log = Image.open("img\\logout.JPG")
+lg_pk = ImageTk.PhotoImage(log.resize((30, 25)))
 
-# Create the password strength indicator label
-strength_label = Label(box_2, text="", font=('Arial', 8, 'bold'), bg='#010F57')
-strength_label.place_forget()
+lbl4 = Label( image=lg_pk)
 
-# Button
-reg = Button(box_2, width=10, pady=5, text="Register", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
-             command=validate_inputs)
-reg.place(x=20, y=305)
+lg_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=lg_pk, cursor='hand2', command=tosign)
+lg_btn.place(x=370, y=5)
 
-log = Button(box_2, width=10, pady=5, text="Login", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
-             command=to_sign)
-log.place(x=150, y=305)
+# To scan
+scan_btn = PhotoImage(file='img\scan.png')
+sc_label = Label(image=scan_btn)
 
-# Terms and Conditions/DPA Acceptance
-checks = BooleanVar()
+sc_btn = Button(box_2, image=scan_btn, width=300, height=90, bg="#021976", bd=0, cursor='hand2', command=toscan)
+sc_btn.place(x=50, y=170)
 
-checks_button = Checkbutton(regist, variable=checks, onvalue=True, offvalue=False, bg='#010F57', bd=0)
-checks_button.place(x=365, y=271)
+# To results
+rep_btn = PhotoImage(file="img\det.png")
+rp_label = Label(image=rep_btn)
 
-text2 = Label(box_2, text="I agree to E.P.B.I.P", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
-text2.place(x=37, y=252)
+rp_btn = Button(box_2, image=rep_btn, width=300, height=90, bg="#021976", bd=0, cursor='hand2', command=toresult)
+rp_btn.place(x=50, y=280)
 
-trm = Button(box_2, width=17, text='terms and conditions', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
-             font=('Arial', 8, 'bold', 'underline'), command=show_terms)
-trm.place(x=137, y=252)
-
-text3 = Label(box_2, text="and ", fg='white', bg='#010F57', font=('Arial', 8, 'bold'))
-text3.place(x=37, y=272)
-
-dpa = Button(box_2, width=10, text='Privacy Policy', border=0, bg='#010F57', cursor='hand2', fg='#38B6FF',
-             font=('Arial', 8, 'bold', 'underline'))
-dpa.place(x=62, y=272)
-
-regist.mainloop()
+dash.mainloop()

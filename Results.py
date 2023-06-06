@@ -5,10 +5,7 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-import os
-import base64
-import email
-import spampy
+import os, base64, email, spampy, json
 from urlchecker.core.urlproc import UrlCheckResult
 
 # Press ⌃R to execute it or replace it with your code.
@@ -30,7 +27,42 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-import os.path
+import os.path, pyrebase
+
+config = {
+'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
+'authDomain': "epbip-17adb.firebaseapp.com",
+'databaseURL': "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
+'projectId': "epbip-17adb",
+'storageBucket': "epbip-17adb.appspot.com",
+'messagingSenderId': "612338602406",
+'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
+'measurementId': "G-J1896JVRT9"
+}
+firebase = pyrebase.initialize_app(config)
+database = firebase.database()
+
+
+# window
+result = Tk()
+result.title("E.P.B.I.P")
+result.geometry("700x550")
+result.resizable(False, False)
+result.iconbitmap(r'img\\logo.ico')
+
+# Set the position of the terminal window
+def center_window(window):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    window_width = window.winfo_width()
+    window_height = window.winfo_height()
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 3
+    window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+# Center the tkinter window
+center_window(result)
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -104,16 +136,14 @@ def main():
 
         # Constructing vertical scrollbar
         # with treeview
-        dosverscrlbar = ttk.Scrollbar(hist,
-                                      orient="horizontal",
-                                      command=table.xview)
+        dosverscrlbar = ttk.Scrollbar(hist, orient="vertical", command=table.yview)
 
         # Calling pack method w.r.to vertical
         # scrollbar
-        dosverscrlbar.pack(side='bottom', fill='x')
+        dosverscrlbar.pack(side='right', fill='y')
 
         # Configuring treeview
-        dostable.configure(xscrollcommand=dosverscrlbar.set)
+        dostable.configure(yscrollcommand=dosverscrlbar.set)
 
         dostable.heading("Date", text="Date")
         dostable.heading("Subject", text="Subject")
@@ -136,13 +166,14 @@ def main():
                 if samplelist[x]["name"] == "Date":
                     date = samplelist[x]["value"]
 
+
             dostable.insert(parent="", index=i, iid=i, text="Row ",
                             values=(date, message["snippet"], "Flagged" if emailPredictions[i] == 1 else "Not Flagged"))
         # dostable.insert(parent="", index=1, iid=1, text="Row 2",
         # values=("03/18/2023", "Click to Win!", "Phishing", "Blocked"))
         dostable.column("Date", minwidth=100)
-        dostable.column("Subject", width=200)
-        dostable.column("Source", width=1100)
+        dostable.column("Subject", width=400)
+        dostable.column("Source", width=100)
 
         # print(email)
         # if not labels:
@@ -151,11 +182,17 @@ def main():
         # print('Labels:')
         # for label in labels:
         #     print(label['name'])
+        
+        # Update the chart with percentages
+        update_chart(dostable)
 
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
         print(f'An error occurred: {error}')
+
+    # Call the save_to_history function and pass the dostable object
+    save_to_history(dostable)  # Save and update history table
 
 
 def main2(emails):
@@ -195,14 +232,6 @@ def printhi(emails):
     # print(clf.predict(emails))
 
 
-# window
-result = Tk()
-result.title("E.P.B.I.P")
-result.geometry("550x600")
-result.resizable(False, False)
-result.iconbitmap(r'img\\logo.ico')
-
-
 def dash():
     result.destroy()
     os.system('Dashboard.py')
@@ -210,13 +239,13 @@ def dash():
 
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
-bck_pk = ImageTk.PhotoImage(bg_0.resize((550, 600)))
+bck_pk = ImageTk.PhotoImage(bg_0.resize((700, 550)))
 
 lbl = Label(result, image=bck_pk, border=0)
 lbl.place(x=1, y=1)
 
 # Header
-box_1 = Frame(result, width=550, height=55, bg='#010F57')
+box_1 = Frame(result, width=700, height=55, bg='#010F57')
 box_1.place(x=3, y=5)
 heading = Label(result, text='Detailed Report', fg='white', bg='#010F57', font=('Arial', 30, 'bold'))
 heading.place(x=130, y=5)
@@ -272,36 +301,105 @@ Label(url, text="The URL has been found a phishing site.", fg='white', width=75,
 hist.configure(background='#010F57')
 bg = ttk.Style
 table = ttk.Treeview(hist, columns=("Date", "Subject", "Response"), show="headings")
+table.grid(row=0, column=1, sticky="nsew")
 # table.pack()
 
 # Calling pack method w.r.to treeview
-table.pack(side='right')
+
 
 # Constructing vertical scrollbar
 # with treeview
-verscrlbar = ttk.Scrollbar(hist,
-                           orient="horizontal",
-                           command=table.xview)
+verscrlbar = ttk.Scrollbar(hist, orient="vertical", command=table.yview)
 
 # Calling pack method w.r.to vertical
 # scrollbar
-verscrlbar.pack(side='bottom', fill='x')
+
 
 # Configuring treeview
-table.configure(xscrollcommand=verscrlbar.set)
+table.configure(yscrollcommand=verscrlbar.set)
 
 table.heading("Date", text="Date")
 table.heading("Subject", text="Subject")
 table.heading("Response", text="Response")
 table.column("Date", minwidth=100)
-table.column("Subject", width=200)
+table.column("Subject", width=377)
 table.column("Response", width=100)
-table.place(x=10, y=10)
+table.place(y=79)
+
+# Function to update the history table with result data
+def update_history_table(data):
+    table.delete(*table.get_children())  # Clear existing table entries
+    
+    for i, entry in enumerate(data):
+        date = entry['date']
+        subject = entry['subject']
+        response = entry['response']
+        
+        table.insert(parent="", index=i, iid=i, text="Row ",
+                     values=(date, subject, response))
+
+# Function to retrieve result data from dostable and save it to the history tab
+def save_to_history(dostable):
+    items = dostable.get_children()  # Get all items in dostable
+    
+    result_data = []
+    for item in items:
+        values = dostable.item(item)['values']
+        date = values[0]
+        subject = values[1]
+        response = values[2]
+        
+        result_data.append({
+            'date': date,
+            'subject': subject,
+            'response': response
+        })
+    
+    # Save the result data to the database
+    database.child('Results').push(result_data)
+    
+    # Update the history table with the saved data
+    update_history_table(result_data)
+
+# Function to retrieve result data from the database
+def retrieve_result_data():
+    result_data = []
+    results = database.child("Results").get()
+    if results is not None:  # Check if results exist
+        for result in results.each():
+            result_data.append(result.val())
+    return result_data
+
+# Function to update the chart with percentages of flagged and not flagged emails
+def update_chart(dostable):
+    items = dostable.get_children()  # Get all items in dostable
+    total_emails = len(items)
+    flagged_emails = 0
+    
+    for item in items:
+        response = dostable.item(item)['values'][2]
+        if response == "Flagged":
+            flagged_emails += 1
+    
+    not_flagged_emails = total_emails - flagged_emails
+    percentages = {
+        "Phishing": flagged_emails / total_emails * 100,
+        "Normal": not_flagged_emails / total_emails * 100
+    }
+    
+    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNot Flagged Emails: {not_flagged_emails}"
+    
+    ax.clear()  # Clear the existing chart
+    ax.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
+    ax.set_title("Phishing Emails")
+    ax.text(0.5, -0.25, statistics, horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
+    canvas.draw()
+
 
 # Chart Tab
 chart.configure(background='#010F57')
 empty_frame = ttk.Frame(chart, height=100)
-fig = Figure(figsize=(4.9, 4), dpi=100)
+fig = Figure(figsize=(3, 5.5), dpi=100)  # Increase the size of the chart
 ax = fig.add_subplot(111)
 data = {"Phishing": 2, "Legitimate": 10}
 ax.pie(data.values(), labels=data.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
@@ -312,6 +410,6 @@ canvas.get_tk_widget().pack(pady=10)
 
 # Exit Button
 Button(notebook, text="X", fg='white', width=1, height=0, bg='#010F57', font=('Arial', 10, 'bold'), bd=0,
-       command=dash).place(x=515, y=27)
+       command=dash).place(x=680, y=27)
 result.after(0, main)
 result.mainloop()

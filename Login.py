@@ -34,6 +34,41 @@ from googleapiclient.errors import HttpError
 
 import os.path
 
+# Access the Realtime Database and retrieve data
+config = {
+'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
+'authDomain': "epbip-17adb.firebaseapp.com",
+'databaseURL': "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
+'projectId': "epbip-17adb",
+'storageBucket': "epbip-17adb.appspot.com",
+'messagingSenderId': "612338602406",
+'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
+'measurementId': "G-J1896JVRT9"
+}
+firebase = pyrebase.initialize_app(config)
+auth = firebase.auth()
+
+# window
+login = Tk()
+login.title("E.P.B.I.P")
+login.geometry("700x400")
+login.resizable(False, False)
+login.iconbitmap(r'img\\logo.ico')
+
+
+# Set the position of the terminal window
+def center_window(window):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    window_width = window.winfo_width()
+    window_height = window.winfo_height()
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 3
+    window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+# Center the tkinter window
+center_window(login)
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -158,27 +193,6 @@ def main2():
        print("prediction: ", clf.score(X_test, y_test))
        print(clf.predict(emails))
 
-# Access the Realtime Database and retrieve data
-config = {
-'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
-'authDomain': "epbip-17adb.firebaseapp.com",
-'databaseURL': "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
-'projectId': "epbip-17adb",
-'storageBucket': "epbip-17adb.appspot.com",
-'messagingSenderId': "612338602406",
-'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
-'measurementId': "G-J1896JVRT9"
-}
-firebase = pyrebase.initialize_app(config)
-auth = firebase.auth()
-
-# window
-login = Tk()
-login.title("E.P.B.I.P")
-login.geometry("700x400")
-login.resizable(False, False)
-login.iconbitmap(r'img\\logo.ico')
-
 # Email validation
 def is_valid_email(email):
     pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
@@ -220,26 +234,26 @@ def hide_pass():
     show_button.place(x=232, y=175)
 
 def invalid():
-    if usernm.get() == 'Example@email.com' and passw.get() == 'Password':
-        messagebox.showerror("Error", "No input in the field")
-    elif usernm.get() == 'Example@email.com' or passw.get() == 'Password':
-        messagebox.showerror("Error", "One of the fields is empty")
-    else:
-        email = usernm.get()
-        password = passw.get()
-        if not is_valid_email(email):
+    email = usernm.get()
+    password = passw.get()
+    if email == 'Example@email.com' and password == 'Password':
+        messagebox.showerror("Error", "Please enter your email and password!")
+    elif email == 'Example@email.com' or email == '':
+        messagebox.showerror("Error", "Please enter your email address!")
+    elif not is_valid_email(email):
             messagebox.showerror("Error", "Invalid Email Format!")
-        else:
-            try:
-                user = auth.sign_in_with_email_and_password(email, password)
-                # save the user's email after a successful login
-                with open('user.json', 'w') as file:
-                    json.dump({'email': email}, file)
-                messagebox.showinfo("Success", "Login Successfully")
-                login.destroy()
-                os.system("Dashboard.py")
-            except:
-                messagebox.showerror("Error", "Invalid Username or Password")
+    elif password == 'Password' or password == '':
+        messagebox.showerror("Error", "Please enter your password!")
+    else:
+        try:
+            user = auth.sign_in_with_email_and_password(email, password)
+            # save the user's email after a successful login
+            with open('user.json', 'w') as file:
+                json.dump({'email': email}, file)
+            login.destroy()
+            os.system("Dashboard.py")
+        except:
+            messagebox.showerror("Error", "Invalid Email or Password!")
     # email = "danielmarco@gmail.com"
     # password = "Danielmarco1!"
     # main()
@@ -309,12 +323,12 @@ vis_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=show_pk,
 vis_button.place(x=232, y=175)
 
 # Button
-Button(box_2, width=20, pady=5, text="Sign In", bg='#021976', fg='white', cursor='hand2', font=('Arial', 12, 'bold'),
-       command=invalid, bd=0).place(x=48, y=245)
+Button(box_2, width=20, pady=5, text="Sign In", bg='#041D9B', fg='white', cursor='hand2', font=('Arial', 12, 'bold'),
+       command=invalid, bd=0, activebackground='#021976', activeforeground='white').place(x=48, y=245)
 
 # Forgot password
 f_pass = Button(box_2, width=15, text='Forgot Password?', border=0, bg='white', cursor='hand2', fg='#021976',
-                font=('Arial', 9), command=forgot)
+                font=('Arial', 9), command=forgot, activeforeground='#A13CA6', activebackground='white')
 f_pass.place(x=45, y=205)
 
 # To Register
@@ -322,7 +336,8 @@ to_reg = Label(box_2, text="Don't have an account?", fg='#021976', bg='white', f
 to_reg.place(x=60, y=295)
 
 sign_up = Button(box_2, width=6, text='Sign up', border=0, bg='white', cursor='hand2', fg='#021976',
-                 font=('Arial', 9, 'bold', 'underline'), command=toreg)
+                 font=('Arial', 9, 'bold', 'underline'), command=toreg, activeforeground='#A13CA6',
+                 activebackground='white')
 sign_up.place(x=195, y=295)
 
 login.mainloop()

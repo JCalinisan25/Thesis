@@ -2,6 +2,10 @@ from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import messagebox
 import os, time
+from googleapiclient.discovery import build
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+import pickle
 
 # window
 scan = Tk()
@@ -10,8 +14,25 @@ scan.geometry("450x450")
 scan.resizable(False, False)
 scan.iconbitmap(r'img\\logo.ico')
 
-# Flag to indicate whether to continue scanning or not
+# Set the position of the terminal window
+def center_window(window):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    window_width = window.winfo_width()
+    window_height = window.winfo_height()
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 3
+    window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+# Center the tkinter window
+center_window(scan)
+
+## Flag to indicate whether to continue scanning or not
 continue_scanning = True
+
+# If modifying these scopes, delete the file token.json.
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 
 def to_sign():
@@ -60,6 +81,40 @@ canvas.place(x=progress_bar_x, y=progress_bar_y)
 
 progress_bar = canvas.create_rectangle(0, 0, 0, progress_bar_height, fill="#38B6FF")
 
+def read_email(progress_label):
+    creds = None
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token)
+
+    service = build('gmail', 'v1', credentials=creds)
+
+    # Call the Gmail API to fetch INBOX
+    results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
+    messages = results.get('messages', [])
+
+    if not messages:
+        print('No new messages.')
+    else:
+        for message in messages:
+            msg = service.users().messages().get(userId='me', id=message['id']).execute()
+            email_data = msg['payload']['headers']
+            for values in email_data:
+                name = values['name']
+                if name == 'From':
+                    from_name = values['value']
+                    progress_label_text.set(f"Processing email from: {from_name}")
+                    scan.update()
+
 def update_progress():
     global continue_scanning
     if continue_scanning:
@@ -68,7 +123,7 @@ def update_progress():
             canvas.coords(progress_bar, (0, 0, progress, progress_bar_height))
             progress_label_text.set(f"Scanning... {int((progress / progress_bar_width) * 100)}%")
             scan.update()
-            time.sleep(0.09)
+            time.sleep(0.02)
             progress += 1
         complete_scan()
         continue_scanning = False
