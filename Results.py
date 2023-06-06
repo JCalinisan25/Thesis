@@ -8,7 +8,9 @@ from matplotlib.figure import Figure
 import os
 
 import os
+import tkinter as tk
 import base64
+import requests
 import email
 import spampy
 from urlchecker.core.urlproc import UrlCheckResult
@@ -36,13 +38,18 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 import os.path
-
+# import firebase_admin
 # If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-
-
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
+totalMessages = []
+# db = firebase.database()
+class EmailScanResult:
+    def __init__(self, messageId, urlScore):
+        self.messageId = messageId
+        self.urlScore = urlScore
 def get_messages(service, user_id):
     try:
+        EmailScanResult(None, None)
         return service.users().messages().list(userId=user_id).execute()
     except Exception as error:
         print('An error occurred: %s' % error)
@@ -66,12 +73,13 @@ def get_mime_message(service, user_id, msg_id):
     except Exception as error:
         print('An error occurred: %s' % error)
 
+messages = []
+creds = None
 
-def main():
+def googleapi():
     """Shows basic usage of the Gmail API.
    Lists the user's Gmail labels.
    """
-    creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
@@ -92,20 +100,26 @@ def main():
     try:
         # Call the Gmail API
         service = build('gmail', 'v1', credentials=creds)
-        results = service.users().messages().list(userId='me', q='newer_than:1d').execute()
+        results = service.users().messages().list(userId='me',labelIds=['CATEGORY_PERSONAL'], maxResults=5, q='newer_than:1d').execute()
         # labels = results.get('labels', [])
-        print(results)
+        # print(results)
         # print(get_messages(service, "me"))
         # email = "Email Subject: " + get_message(service, 'me', '188006a34139969c')["snippet"]
-        messages = []
+
         for i in range(len(results['messages'])):
-            messages.append(get_message(service, 'me', results['messages'][i]['id']))
+            message = get_message(service, 'me', results['messages'][i]['id'])
+            print(str(i), message)
+            messages.append(message)
         dosbg = ttk.Style
         dostable = ttk.Treeview(dos, columns=("Date", "Subject", "Source", "Response"), show="headings")
         # table.pack()
 
         # Calling pack method w.r.to treeview
         dostable.pack(side='right')
+
+        # root= tk.Tk()
+        # dosverscrlbar = ttk.Scrollbar(dostable)
+        # dosverscrlbar.pack(side='bottom', fill='y')
 
         # Constructing vertical scrollbar
         # with treeview
@@ -122,7 +136,7 @@ def main():
 
         dostable.heading("Date", text="Date")
         dostable.heading("Subject", text="Subject")
-        dostable.heading("Source", text="Result")
+        dostable.heading("Source", text="Analysis")
         subjectsToPredict = []
         for i in range(len(messages)):
             subjectsToPredict.append(messages[i]["snippet"])
@@ -137,31 +151,37 @@ def main():
             date = ''
 
             for x in range(len(samplelist)):
-                print(samplelist[x])
                 if samplelist[x]["name"] == "Date":
                     date = samplelist[x]["value"]
-
+            totalMessages.append(message)
             dostable.insert(parent="", index=i, iid=i, text="Row ",
-                            values=(date, message["snippet"], "Flagged" if emailPredictions[i] == 1 else "Not Flagged"))
-        # dostable.insert(parent="", index=1, iid=1, text="Row 2",
-        # values=("03/18/2023", "Click to Win!", "Phishing", "Blocked"))
+                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No anomaly was found"))
+            emctable.insert(parent="", index=i, iid=i, text="Row ",
+                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No anomaly was found"))
         dostable.column("Date", minwidth=100)
         dostable.column("Subject", width=200)
-        dostable.column("Source", width=1100)
-
-        # print(email)
-        # if not labels:
-        #     print('No labels found.')
-        #     return
-        # print('Labels:')
-        # for label in labels:
-        #     print(label['name'])
+        dostable.column("Source", width=200)
 
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
         print(f'An error occurred: {error}')
-
+def delete(messageId):
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+    service = build('gmail', 'v1', credentials=creds)
+    service.users().messages().trash(userId='me', id=messageId).execute()
 
 def main2(emails):
     for dirname, _, filenames in os.walk('/kaggle/input'):
@@ -176,12 +196,10 @@ def main2(emails):
 def printhi(emails):
     # Use a breakpoint in the code line below to debug your script.
     data = pd.read_csv('spam.csv')
-    # print(data)
     data.columns
     # data.info()
     # data.isna().sum()
     data['Spam'] = data['Category'].apply(lambda x: 1 if x == 'spam' else 0)
-    # print(data.head(5))
 
     X_train, X_test, y_train, y_test = train_test_split(data.Message, data.Spam, test_size=0.5)
 
@@ -199,11 +217,14 @@ def printhi(emails):
     # print("prediction: ", clf.score(X_test, y_test))
     # print(clf.predict(emails))
 
+def gotoscreens():
+    googleapi()
+    phishing()
 
 # window
 result = Tk()
 result.title("Detailed Results")
-result.geometry("550x600")
+result.geometry("1000x1000")
 
 
 def dash():
@@ -213,17 +234,18 @@ def dash():
 
 # Background
 bg_0 = Image.open("img\\bg.jpg")
-bck_pk = ImageTk.PhotoImage(bg_0.resize((550, 600)))
+bck_pk = ImageTk.PhotoImage(bg_0.resize((1000, 1000)))
 
 lbl = Label(result, image=bck_pk, border=0)
 lbl.place(x=1, y=1)
 
 # Header
+
+
 box_1 = Frame(result, width=550, height=55, bg='#010F57')
 box_1.place(x=3, y=5)
 heading = Label(result, text='Detailed Report', fg='white', bg='#010F57', font=('Arial', 30, 'bold'))
-heading.place(x=130, y=5)
-
+heading.place(x=10, y=5)
 # widget that manages a collection of windows/displays
 notebook = ttk.Notebook(result)
 notebook.pack(pady=70)
@@ -243,8 +265,8 @@ url = Frame(notebook)
 hist = Frame(notebook)
 chart = Frame(notebook)
 
-notebook.add(dos, text="Domain of Sender\t          ")
-notebook.add(em_c, text="Email Content\t     ")
+notebook.add(dos, text="Subject\t          ")
+notebook.add(em_c, text="All data\t     ")
 notebook.add(logo, text="Logo\t    ")
 notebook.add(url, text="URL/s\t    ")
 notebook.add(hist, text="History\t    ")
@@ -258,8 +280,8 @@ dos.configure(background='#010F57')
 
 # Email Tab
 em_c.configure(background='#010F57')
-Label(em_c, text="The email content has been found to be fraudulent.", fg='white', width=75, height=50,
-      bg='#010F57', bd=0, font=('Arial', 9, 'bold')).pack()
+# Label(em_c, text="The email content has been found to be fraudulent.", fg='white', width=75, height=50,
+#       bg='#010F57', bd=0, font=('Arial', 9, 'bold')).pack()
 
 # Logo Tab
 logo.configure(background='#010F57')
@@ -268,8 +290,6 @@ Label(logo, text="The logo has been found to be fraudulent.", fg='white', width=
 
 # URL Tab
 url.configure(background='#010F57')
-Label(url, text="The URL has been found a phishing site.", fg='white', width=75, height=50,
-      bg='#010F57', bd=0, font=('Arial', 9, 'bold')).pack()
 
 # History Tab
 hist.configure(background='#010F57')
@@ -283,27 +303,56 @@ table.pack(side='right')
 # Constructing vertical scrollbar
 # with treeview
 verscrlbar = ttk.Scrollbar(hist,
-                           orient="horizontal",
-                           command=table.xview)
+                           orient="vertical",
+                           command=table.yview)
 
 # Calling pack method w.r.to vertical
 # scrollbar
-verscrlbar.pack(side='bottom', fill='x')
+verscrlbar.pack(side='right', fill='y')
 
 # Configuring treeview
-table.configure(xscrollcommand=verscrlbar.set)
+table.configure(yscrollcommand=verscrlbar.set)
 
 table.heading("Date", text="Date")
 table.heading("Name", text="Name")
 table.heading("Source", text="Source")
 table.heading("Response", text="Response")
-table.insert(parent="", index=0, iid=0, text="Row 1", values=("03/15/2023", "Click Now!", "Phishing", "Blocked"))
 table.insert(parent="", index=1, iid=1, text="Row 2", values=("03/18/2023", "Click to Win!", "Phishing", "Blocked"))
 table.column("Date", minwidth=100)
 table.column("Name", width=200)
-table.column("Source", width=1100)
+table.column("Source", width=200)
 table.column("Response", width=400)
 table.place(x=10, y=10)
+
+emcbg = ttk.Style
+emctable = ttk.Treeview(em_c, columns=("Date", "Name", "Source", "Response"), show="headings")
+# table.pack()
+
+# Calling pack method w.r.to treeview
+emctable.pack(side='right')
+
+# Constructing vertical scrollbar
+# with treeview
+emctableverscrlbar = ttk.Scrollbar(hist,
+                                   orient="vertical",
+                                   command=emctable.yview)
+
+# Calling pack method w.r.to vertical
+# scrollbar
+emctableverscrlbar.pack(side='right', fill='y')
+
+# Configuring treeview
+emctable.configure(yscrollcommand=emctableverscrlbar.set)
+
+emctable.heading("Date", text="Date")
+emctable.heading("Name", text="Name")
+emctable.heading("Source", text="Analysis")
+emctable.heading("Response", text="Response")
+emctable.column("Date", minwidth=100)
+emctable.column("Name", width=200)
+emctable.column("Source", width=200)
+emctable.column("Response", width=400)
+emctable.place(x=10, y=10)
 
 # Chart Tab
 chart.configure(background='#010F57')
@@ -317,8 +366,108 @@ canvas = FigureCanvasTkAgg(fig, master=chart)
 canvas.draw()
 canvas.get_tk_widget().pack(pady=10)
 
+urlbg = ttk.Style
+urltable = ttk.Treeview(url, columns=("Email", "Subject", "Source", "Response"), show="headings")
+personalMessages = []
+
+
+def selectItem(a):
+    curItem = urltable.focus()
+    print(urltable.item(curItem))
+def phishing():
+    #UI
+        # table.pack()
+
+    # Calling pack method w.r.to treeview
+    urltable.pack(side='right')
+
+    # Constructing vertical scrollbar
+    # with treeview
+    urlverscrlbar = ttk.Scrollbar(url,
+                                  orient="horizontal",
+                                  command=table.xview)
+
+    # Calling pack method w.r.to vertical
+    # scrollbar
+    urlverscrlbar.pack(side='bottom', fill='x')
+
+    # Configuring treeview
+    urltable.configure(xscrollcommand=urlverscrlbar.set)
+
+    urltable.heading("Email", text="Email")
+    urltable.heading("Subject", text="Subject")
+    urltable.heading("Source", text="Analysis")
+    #data
+    # messageforurl = []
+    for i in range(len(messages)):
+        hasPersonalLabel = False
+        for labelIndex in range(len(messages[i]["labelIds"])):
+            if messages[i]["labelIds"][labelIndex] == 'CATEGORY_PERSONAL':
+                hasPersonalLabel = True
+        if hasPersonalLabel == True:
+            personalMessages.append(messages[i])
+
+    print("PHISHING MESSAGES:", personalMessages)
+    for i in range(len(personalMessages)):
+        for headerindex in range(len(personalMessages[i]['payload']["headers"])):
+            if personalMessages[i]['payload']["headers"][headerindex]["name"] == 'From':
+                messageforurl = ""
+                explanationforurl = ""
+                fromStringValue = personalMessages[i]['payload']["headers"][headerindex]["value"]
+                indexOfAtSign = fromStringValue.find('@')
+                domainString = fromStringValue[indexOfAtSign + 1:len(fromStringValue) - 1]
+                emailString = fromStringValue
+                if domainString == 'gmail.com':
+                    messageforurl = ("Low Risk for Phishing")
+                    explanationforurl = "The user is using his/her personal email. Legitimate institutions usually use their company email."
+                else:
+                    indexOfLessThan = fromStringValue.find('<')
+                    if indexOfLessThan == -1:
+                        emailString = fromStringValue
+                        messageforurl = "No Risk for Phishing"
+                        explanationforurl = "The user is using a legitimate email associated with their institution."
+                    else:
+                        emailString = fromStringValue[indexOfLessThan + 1:len(fromStringValue) - 1]
+                        urlString = "https://email-validator8.p.rapidapi.com/api/v2.0/email"
+                        payload = {"email": emailString}
+                        headers = {
+                            "content-type": "application/x-www-form-urlencoded",
+                            "X-RapidAPI-Key": "654c1140e2msh8ec1c8e50fa2531p1e189ejsn4d90f1ce9931",
+                            "X-RapidAPI-Host": "email-validator8.p.rapidapi.com"
+                        }
+                        # uncomment
+                        # response = requests.post(urlString, data=payload, headers=headers)
+                        # if response.json()["disposable"] == True:
+                        #     messageforurl = "The sender's email is disposable"
+                        # else:
+                        #     messageforurl = "The sender's email looks legitimate."
+                totalMessages.append(personalMessages[i])
+                urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
+                                values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
+                emctable.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
+                                values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
+    urltable.column("Email", minwidth=100)
+    urltable.column("Subject", width=200)
+    urltable.column("Source", width=200)
+    urltable.bind('<Button-1>', selectItem)
+
+
+def callback():
+    indexSelected = notebook.index(notebook.select())
+    if indexSelected == 0:
+        print("")
+    elif indexSelected == 1:
+        if emctable.focus() != '':
+            indexToBeDeleted = int(emctable.focus())
+            delete(totalMessages[indexToBeDeleted]["id"])
+    else:
+        print("")
+
+spamButton = Button(result, text="Move to trash", command=callback)
+spamButton.place(x=350, y=15)
+
 # Exit Button
 Button(notebook, text="X", fg='white', width=1, height=0, bg='#010F57', font=('Arial', 10, 'bold'), bd=0,
        command=dash).place(x=515, y=27)
-result.after(0, main)
+result.after(0, gotoscreens())
 result.mainloop()
