@@ -5,14 +5,7 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-import os
-
-import os
-import tkinter as tk
-import base64
-import requests
-import email
-import spampy
+import os, base64, email, spampy, json
 from urlchecker.core.urlproc import UrlCheckResult
 
 # Press ⌃R to execute it or replace it with your code.
@@ -22,9 +15,6 @@ import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 
 # Input data files are available in the read-only "../input/" directory
 # For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
-
-
-import os
 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.naive_bayes import MultinomialNB
@@ -37,7 +27,20 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-import os.path
+import os.path, pyrebase
+
+config = {
+'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
+'authDomain': "epbip-17adb.firebaseapp.com",
+'databaseURL': "https://epbip-17adb-default-rtdb.asia-southeast1.firebasedatabase.app",
+'projectId': "epbip-17adb",
+'storageBucket': "epbip-17adb.appspot.com",
+'messagingSenderId': "612338602406",
+'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
+'measurementId': "G-J1896JVRT9"
+}
+firebase = pyrebase.initialize_app(config)
+database = firebase.database()
 # import firebase_admin
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
@@ -161,6 +164,8 @@ def googleapi():
         dostable.column("Date", minwidth=100)
         dostable.column("Subject", width=200)
         dostable.column("Source", width=200)
+        update_chart(dostable)
+
 
 
     except HttpError as error:
@@ -222,9 +227,26 @@ def gotoscreens():
     phishing()
 
 # window
+# window
 result = Tk()
-result.title("Detailed Results")
-result.geometry("1000x1000")
+result.title("E.P.B.I.P")
+result.geometry("700x550")
+result.resizable(False, False)
+result.iconbitmap(r'img\\logo.ico')
+
+# Set the position of the terminal window
+def center_window(window):
+    window.update_idletasks()
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    window_width = window.winfo_width()
+    window_height = window.winfo_height()
+    x = (screen_width - window_width) // 2
+    y = (screen_height - window_height) // 3
+    window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+
+# Center the tkinter window
+center_window(result)
 
 
 def dash():
@@ -233,16 +255,14 @@ def dash():
 
 
 # Background
-bg_0 = Image.open("img\\bg.jpg")
-bck_pk = ImageTk.PhotoImage(bg_0.resize((1000, 1000)))
+bg_0 = Image.open("img\\bg8.jpg")
+bck_pk = ImageTk.PhotoImage(bg_0.resize((700, 550)))
 
 lbl = Label(result, image=bck_pk, border=0)
 lbl.place(x=1, y=1)
 
 # Header
-
-
-box_1 = Frame(result, width=550, height=55, bg='#010F57')
+box_1 = Frame(result, width=700, height=55, bg='#010F57')
 box_1.place(x=3, y=5)
 heading = Label(result, text='Detailed Report', fg='white', bg='#010F57', font=('Arial', 30, 'bold'))
 heading.place(x=10, y=5)
@@ -323,6 +343,80 @@ table.column("Name", width=200)
 table.column("Source", width=200)
 table.column("Response", width=400)
 table.place(x=10, y=10)
+table.column("Date", minwidth=100)
+table.column("Subject", width=377)
+table.column("Response", width=100)
+table.place(y=79)
+
+# Function to update the history table with result data
+def update_history_table(data):
+    table.delete(*table.get_children())  # Clear existing table entries
+
+    for i, entry in enumerate(data):
+        date = entry['date']
+        subject = entry['subject']
+        response = entry['response']
+
+        table.insert(parent="", index=i, iid=i, text="Row ",
+                     values=(date, subject, response))
+
+# Function to retrieve result data from dostable and save it to the history tab
+def save_to_history(dostable):
+    items = dostable.get_children()  # Get all items in dostable
+
+    result_data = []
+    for item in items:
+        values = dostable.item(item)['values']
+        date = values[0]
+        subject = values[1]
+        response = values[2]
+
+        result_data.append({
+            'date': date,
+            'subject': subject,
+            'response': response
+        })
+
+    # Save the result data to the database
+    database.child('Results').push(result_data)
+
+    # Update the history table with the saved data
+    update_history_table(result_data)
+
+# Function to retrieve result data from the database
+def retrieve_result_data():
+    result_data = []
+    results = database.child("Results").get()
+    if results is not None:  # Check if results exist
+        for result in results.each():
+            result_data.append(result.val())
+    return result_data
+
+# Function to update the chart with percentages of flagged and not flagged emails
+def update_chart(dostable):
+    items = dostable.get_children()  # Get all items in dostable
+    total_emails = len(items)
+    flagged_emails = 0
+
+    for item in items:
+        response = dostable.item(item)['values'][2]
+        if response == "Flagged":
+            flagged_emails += 1
+
+    not_flagged_emails = total_emails - flagged_emails
+    percentages = {
+        "Phishing": flagged_emails / total_emails * 100,
+        "Normal": not_flagged_emails / total_emails * 100
+    }
+
+    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNot Flagged Emails: {not_flagged_emails}"
+
+    ax.clear()  # Clear the existing chart
+    ax.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
+    ax.set_title("Phishing Emails")
+    ax.text(0.5, -0.25, statistics, horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
+    canvas.draw()
+
 
 emcbg = ttk.Style
 emctable = ttk.Treeview(em_c, columns=("Date", "Name", "Source", "Response"), show="headings")
