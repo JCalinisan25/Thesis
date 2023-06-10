@@ -273,12 +273,6 @@ heading.place(x=10, y=5)
 notebook = ttk.Notebook(result)
 notebook.pack(pady=70)
 
-error = Image.open("img\\error.PNG")
-ror_pk = ImageTk.PhotoImage(error.resize((100, 100)))
-
-lbl = Label(notebook, image=ror_pk, border=0)
-lbl.place(x=230, y=190)
-
 # Tab results
 gback = Button(notebook)
 dos = Frame(notebook)
