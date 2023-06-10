@@ -64,7 +64,7 @@ def reset_password():
 
         try:
             auth.send_password_reset_email(email)
-            messagebox.showinfo("Success", "Password reset request was sent successfully.")
+            messagebox.showinfo("Success", "Password reset request has been sent successfully.")
             forgot.destroy()
             os.system("Login.py")
         except requests.exceptions.HTTPError as e:

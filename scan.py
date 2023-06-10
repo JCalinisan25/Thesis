@@ -44,7 +44,6 @@ def to_sign():
 
 
 def complete_scan():
-    messagebox.showinfo("Successful", "Scan completed successfully!")
     scan.destroy()
     os.system('Results.py')
 
@@ -123,7 +122,7 @@ def update_progress():
             canvas.coords(progress_bar, (0, 0, progress, progress_bar_height))
             progress_label_text.set(f"Scanning... {int((progress / progress_bar_width) * 100)}%")
             scan.update()
-            time.sleep(0.02)
+            time.sleep(0.01)
             progress += 1
         complete_scan()
         continue_scanning = False

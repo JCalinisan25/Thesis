@@ -297,7 +297,7 @@ log_name = Label(box_2, text='Sign In', fg='#021976', bg='White', font=('Copperp
 log_name.place(x=100, y=40)
 
 # User
-usernm = Entry(box_2, width=25, fg='#9098ba', border=0, bg='white', font=('Arial', 11, 'bold'), show="")
+usernm = Entry(box_2, width=25, fg='#9098ba', border=0, bg='white', font=('Arial', 11, 'bold') )
 usernm.place(x=50, y=125)
 usernm.insert(0, 'Example@email.com')
 usernm.bind('<FocusIn>', on_entry)
@@ -306,7 +306,7 @@ usernm.bind('<Button-1>', remove_focus)
 Frame(box_2, width=205, height=2, bg='#010F57').place(x=48, y=145)
 
 # Password
-passw = Entry(box_2, width=22, fg='#9098ba', border=0, bg='white', font=('Arial', 11, 'bold'), show="")
+passw = Entry(box_2, width=22, fg='#9098ba', border=0, bg='white', font=('Arial', 11, 'bold'))
 passw.place(x=50, y=175)
 passw.insert(0, 'Password')
 passw.bind('<FocusIn>', on_enter)
