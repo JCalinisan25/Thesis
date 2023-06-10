@@ -42,12 +42,12 @@ config = {
 
 firebase = pyrebase.initialize_app(config)
 database = firebase.database()
-database = firebase.database()
+
 # import firebase_admin
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
 totalMessages = []
-# db = firebase.database()
+
 class EmailScanResult:
     def __init__(self, messageId, urlScore):
         self.messageId = messageId
@@ -92,7 +92,7 @@ def googleapi():
     # if os.path.exists('token.json'):
     #     creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     # If there are no (valid) credentials available, let the user log in.
-    creds =None
+    creds = None
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -107,7 +107,8 @@ def googleapi():
     try:
         # Call the Gmail API
         service = build('gmail', 'v1', credentials=creds)
-        results = service.users().messages().list(userId='me', labelIds=['CATEGORY_PERSONAL'], maxResults=50, q='newer_than:4d').execute()
+        results = service.users().messages().list(userId='me', maxResults=50, q='newer_than:4d').execute()
+        # labelIds=['CATEGORY_PERSONAL']
         # labels = results.get('labels', [])
         # print(results)
         # print(get_messages(service, "me"))
@@ -536,7 +537,7 @@ def phishing():
                 #             messageforurl = "The sender's email is disposable"
                 #         else:
                 #             messageforurl = "The sender's email looks legitimate."
-                # totalMessages.append(personalMessages[i])
+                totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
                 emctable.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
@@ -560,8 +561,15 @@ def callback():
     else:
         print("")
 
+def todash():
+    result.destroy()
+    os.system("Dashboard.py")
+
 spamButton = Button(result, text="Move to trash", command=callback)
 spamButton.place(x=350, y=15)
+
+bck_btn = Button(result, text="Return to dashboard", command=todash)
+bck_btn.place(x=750, y=15)
 
 # Exit Button
 result.after(0, gotoscreens)
