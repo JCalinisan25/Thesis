@@ -78,21 +78,22 @@ def get_mime_message(service, user_id, msg_id):
     except Exception as error:
         print('An error occurred: %s' % error)
 
+
 messages = []
 creds = None
+
 
 def googleapi():
     """Shows basic usage of the Gmail API.
    Lists the user's Gmail labels.
    """
-   
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    # if os.path.exists('token.json'):
-    #     creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     # If there are no (valid) credentials available, let the user log in.
-    creds = None
+    #creds = None
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -118,11 +119,11 @@ def googleapi():
             print(str(i), message)
             messages.append(message)
         dosbg = ttk.Style
-        dostable = ttk.Treeview(dos, columns=("Date", "Subject", "Source", "Response"), show="headings")
+        dostable = ttk.Treeview(dos, columns=("Date", "Subject", "Analysis"), show="headings")
         # table.pack()
 
         # Calling pack method w.r.to treeview
-        dostable.pack(side='right')
+        dostable.pack(side='left')
 
         # root= tk.Tk()
         # dosverscrlbar = ttk.Scrollbar(dostable)
@@ -133,17 +134,14 @@ def googleapi():
         dosverscrlbar = ttk.Scrollbar(dos,
                                       orient="vertical",
                                       command=dostable.yview)
-
         # Calling pack method w.r.to vertical
         # scrollbar
-        dosverscrlbar.pack(side='right', fill='y')
-
+        dosverscrlbar.pack(side='left', fill='y')
         # Configuring treeview
         dostable.configure(yscrollcommand=dosverscrlbar.set)
-
         dostable.heading("Date", text="Date")
         dostable.heading("Subject", text="Subject")
-        dostable.heading("Source", text="Analysis")
+        dostable.heading("Analysis", text="Analysis")
         subjectsToPredict = []
         for i in range(len(messages)):
             subjectsToPredict.append(messages[i]["snippet"])
@@ -162,19 +160,22 @@ def googleapi():
                     date = samplelist[x]["value"]
             totalMessages.append(message)
             dostable.insert(parent="", index=i, iid=i, text="Row ",
-                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No anomaly was found"))
+                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", 
+                                    "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
+            
             emctable.insert(parent="", index=i, iid=i, text="Row ",
-                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No anomaly was found"))
-        dostable.column("Date", width=138)
+                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", 
+                                    "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
+        dostable.column("Date", width=180)
         dostable.column("Subject", width=400)
-        dostable.column("Source", width=200)
+        dostable.column("Analysis", width=200)
         update_chart(dostable)
-
-
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
         print(f'An error occurred: {error}')
+
+
 def delete(messageId):
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
@@ -191,6 +192,7 @@ def delete(messageId):
             token.write(creds.to_json())
     service = build('gmail', 'v1', credentials=creds)
     service.users().messages().trash(userId='me', id=messageId).execute()
+
 
 def main2(emails):
     for dirname, _, filenames in os.walk('/kaggle/input'):
@@ -283,10 +285,10 @@ url = Frame(notebook)
 hist = Frame(notebook)
 chart = Frame(notebook)
 
+notebook.add(em_c, text="Summary\t     ")
 notebook.add(dos, text="Subject\t          ")
-notebook.add(em_c, text="All data\t     ")
-notebook.add(logo, text="Logo\t    ")
 notebook.add(url, text="URL/s\t    ")
+notebook.add(logo, text="Logo\t    ")
 notebook.add(hist, text="History\t    ")
 notebook.add(chart, text="Chart\t    ")
 
@@ -312,39 +314,37 @@ url.configure(background='#010F57')
 # History Tab
 hist.configure(background='#010F57')
 bg = ttk.Style
-hist_table = ttk.Treeview(hist, columns=("Date", "Name", "Source", "Response"), show="headings")
+hist_table = ttk.Treeview(hist, columns=("Date", "Email", "Subject", "Spam", "Phishing", "Warning", "Recommendation"), show="headings")
 # table.pack()
 
-# Calling pack method w.r.to treeview
-hist_table.pack(side='right')
+# Constructing vertical scrollbar with treeview
+histtableverscrlbar = ttk.Scrollbar(hist, orient="vertical", command=hist_table.yview)
 
-# Constructing vertical scrollbar
-# with treeview
-verscrlbar = ttk.Scrollbar(hist,
-                           orient="vertical",
-                           command=hist_table.yview)
-
-# Calling pack method w.r.to vertical
-# scrollbar
-verscrlbar.pack(side='right', fill='y')
+# Constructing horizontal scrollbar with treeview
+histtablehorscrlbar = ttk.Scrollbar(hist, orient="horizontal", command=hist_table.xview)
 
 # Configuring treeview
-hist_table.configure(yscrollcommand=verscrlbar.set)
-
+hist_table.configure(xscrollcommand=histtablehorscrlbar.set, yscrollcommand=histtableverscrlbar.set)
 hist_table.heading("Date", text="Date")
-hist_table.heading("Name", text="Name")
-hist_table.heading("Source", text="Source")
-hist_table.heading("Response", text="Response")
-for i in range(1000):
-    hist_table.insert(parent="", index=i, iid=i, text="Row 2", values=("03/18/2023 " + str(i), "Click to Win!", "Phishing", "Blocked"))
-hist_table.column("Date", minwidth=100)
-hist_table.column("Name", width=200)
-hist_table.column("Source", width=200)
-hist_table.column("Response", width=400)
-hist_table.column("Date", minwidth=100)
-hist_table.column("Source", width=377)
-hist_table.column("Response", width=100)
-hist_table.place(y=79)
+hist_table.heading("Email", text="Email")
+hist_table.heading("Subject", text="Subject")
+hist_table.heading("Spam", text="Spam")
+hist_table.heading("Phishing", text="Phishing")
+hist_table.heading("Warning", text="Warning")
+hist_table.heading("Recommendation", text="Recommendation")
+hist_table.column("Date", minwidth=180)
+hist_table.column("Email", width=240)
+hist_table.column("Subject", width=400)
+hist_table.column("Spam", width=200)
+hist_table.column("Phishing", minwidth=200)
+hist_table.column("Warning", width=450)
+hist_table.column("Recommendation", width=350)
+
+# Place treeview and scrollbars
+hist_table.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
+histtableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
+histtablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these values as needed
+
 
 # Function to update the history table with result data
 def update_history_table(data):
@@ -417,34 +417,37 @@ def update_chart(dostable):
 
 
 emcbg = ttk.Style
-emctable = ttk.Treeview(em_c, columns=("Date", "Name", "Source", "Response"), show="headings")
+emctable = ttk.Treeview(em_c, columns=("Date", "Email", "Subject", "Spam","Phishing", "Warning", "Response"), show="headings")
 # table.pack()
 
-# Calling pack method w.r.to treeview
-emctable.pack(side='right')
+# Constructing vertical scrollbar with treeview
+emctableverscrlbar = ttk.Scrollbar(em_c, orient="vertical", command=emctable.yview)
 
-# Constructing vertical scrollbar
-# with treeview
-emctableverscrlbar = ttk.Scrollbar(em_c,
-                                   orient="vertical",
-                                   command=emctable.yview)
-
-# Calling pack method w.r.to vertical
-# scrollbar
-emctableverscrlbar.pack(side='right', fill='y')
+# Constructing horizontal scrollbar with treeview
+emctablehorscrlbar = ttk.Scrollbar(em_c, orient="horizontal", command=emctable.xview)
 
 # Configuring treeview
-emctable.configure(yscrollcommand=emctableverscrlbar.set)
+emctable.configure(xscrollcommand=emctablehorscrlbar.set, yscrollcommand=emctableverscrlbar.set)
 
 emctable.heading("Date", text="Date")
-emctable.heading("Name", text="Name")
-emctable.heading("Source", text="Analysis")
+emctable.heading("Email", text="Email")
+emctable.heading("Subject", text="Subject")
+emctable.heading("Spam", text="Analysis(Spam)")
+emctable.heading("Phishing", text="Analysis(Phishing)")
+emctable.heading("Warning", text="Warning")
 emctable.heading("Response", text="Response")
 emctable.column("Date", minwidth=100)
-emctable.column("Name", width=200)
-emctable.column("Source", width=200)
+emctable.column("Email", width=200)
+emctable.column("Subject", width=200)
+emctable.column("Spam", width=200)
+emctable.column("Phishing", width=200)
+emctable.column("Warning", width=200)
 emctable.column("Response", width=400)
-emctable.place(y=79)
+
+# Place treeview and scrollbars
+emctable.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
+emctableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
+emctablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these values as needed
 
 # Chart Tab
 chart.configure(background='#010F57')
@@ -466,26 +469,19 @@ personalMessages = []
 def selectItem(a):
     curItem = urltable.focus()
     print(urltable.item(curItem))
-def phishing():
+
+def phishing(): 
     #UI
+
         # table.pack()
+    # Constructing vertical scrollbar with treeview
+    urltableverscrlbar = ttk.Scrollbar(url, orient="vertical", command=urltable.yview)
 
-    # Calling pack method w.r.to treeview
-    urltable.pack(side='right')
-
-    # Constructing vertical scrollbar
-    # with treeview
-    urlverscrlbar = ttk.Scrollbar(url,
-                                  orient="vertical",
-                                  command=urltable.yview)
-
-    # Calling pack method w.r.to vertical
-    # scrollbar
-    urlverscrlbar.pack(side='right', fill='y')
+    # Constructing horizontal scrollbar with treeview
+    urltablehorscrlbar = ttk.Scrollbar(url, orient="horizontal", command=urltable.xview)
 
     # Configuring treeview
-    urltable.configure(yscrollcommand=urlverscrlbar.set)
-
+    urltable.configure(xscrollcommand=urltablehorscrlbar.set, yscrollcommand=urltableverscrlbar.set)
     urltable.heading("Email", text="Email")
     urltable.heading("Subject", text="Subject")
     urltable.heading("Source", text="Analysis")
@@ -511,14 +507,17 @@ def phishing():
                 domainString = fromStringValue[indexOfAtSign + 1:len(fromStringValue) - 1]
                 emailString = fromStringValue
                 if domainString == 'gmail.com':
-                    messageforurl = ("Low Risk for Phishing")
-                    explanationforurl = "The user is using his/her personal email. Legitimate institutions usually use their company email."
+                    messageforurl = "No Risk for Phishing"
+                    explanationforurl = "The email of the sender is a personal email."
+                #elif domainString != 'gmail.com':
+                    #messageforurl = "Low Risk for Phishing"
+                    #explanationforurl = "The url is a legitimate email associated with their institution."
                 else:
                     indexOfLessThan = fromStringValue.find('<')
                     if indexOfLessThan == -1:
                         emailString = fromStringValue
-                        messageforurl = "No Risk for Phishing"
-                        explanationforurl = "The user is using a legitimate email associated with their institution."
+                        messageforurl = "Low Risk for Phishing"
+                        explanationforurl = "The sender's email is a legitimate email associated with their institution."
                     else:
                         emailString = fromStringValue[indexOfLessThan + 1:len(fromStringValue) - 1]
                         # urlString = "https://email-validator8.p.rapidapi.com/api/v2.0/email"
@@ -534,20 +533,25 @@ def phishing():
                         # uncomment
                 #         response = requests.get(urlString, headers=headers, params=querystring)
                 #         if response.json()["disposable"] == True:
-                #             messageforurl = "The sender's email is disposable"
+                #             explanationforurl = "The sender's email is disposable"
                 #         else:
-                #             messageforurl = "The sender's email looks legitimate."
+                #             explanationforurl = "The sender's email looks legitimate."
                 totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
                 emctable.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
-                                values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
-    urltable.column("Email", minwidth=100)
-    urltable.column("Subject", width=200)
-    urltable.column("Source", width=200)
-    urltable.column("Response", width=400)
-    urltable.place(y=79)
+                                values=(emailString, messageforurl, explanationforurl))
+    
+    urltable.column("Email", minwidth=240)
+    urltable.column("Subject", width=450)
+    urltable.column("Source", width=120)
+    urltable.column("Response", width=450)
     urltable.bind('<Button-1>', selectItem)
+
+    # Place treeview and scrollbars
+    urltable.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
+    urltableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
+    urltablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these values as needed
 
 
 def callback():
@@ -561,6 +565,7 @@ def callback():
     else:
         print("")
 
+
 def todash():
     result.destroy()
     os.system("Dashboard.py")
@@ -569,7 +574,7 @@ spamButton = Button(result, text="Move to trash", command=callback)
 spamButton.place(x=350, y=15)
 
 bck_btn = Button(result, text="Return to dashboard", command=todash)
-bck_btn.place(x=750, y=15)
+bck_btn.place(x=770, y=15)
 
 # Exit Button
 result.after(0, gotoscreens)
