@@ -94,7 +94,7 @@ def googleapi():
     # created automatically when the authorization flow completes for the first
     # time.
     if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     #creds = None
     if not creds or not creds.valid:
@@ -111,7 +111,7 @@ def googleapi():
     try:
         # Call the Gmail API
         service = build('gmail', 'v1', credentials=creds)
-        results = service.users().messages().list(userId='me', maxResults=100, q='newer_than:4d').execute()
+        results = service.users().messages().list(userId='me', maxResults=50, q='newer_than:4d').execute()
         # labelIds=['CATEGORY_PERSONAL']
         # labels = results.get('labels', [])
         # print(results)
@@ -178,8 +178,6 @@ def googleapi():
 
 
     
-    
-
 def delete(messageId):
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
@@ -262,6 +260,10 @@ def dash():
     result.destroy()
     os.system('Dashboard.py')
 
+def update_heading(event):
+    selected_tab = notebook.tab(notebook.select(), "text")
+    heading.config(text=selected_tab)
+
 
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
@@ -275,9 +277,18 @@ box_1 = Frame(result, width=900, height=55, bg='#010F57')
 box_1.place(x=3, y=5)
 heading = Label(result, text='Detailed Report', fg='white', bg='#010F57', font=('Arial', 30, 'bold'))
 heading.place(x=10, y=5)
+
+
+def update_tab_title(event):
+    selected_tab = notebook.tab(notebook.select(), "text")
+    result.title(f"Detailed Report - {selected_tab}")
+
 # widget that manages a collection of windows/displays
 notebook = ttk.Notebook(result, height=465, width = 895)
 notebook.place(x=1,y=60)
+
+# Bind the event to update the tab title
+notebook.bind("<<NotebookTabChanged>>", update_tab_title)
 
 # Tab results
 gback = Button(notebook)
@@ -294,6 +305,12 @@ notebook.add(url, text="URL/s\t    ")
 notebook.add(logo, text="Logo\t    ")
 notebook.add(hist, text="History\t    ")
 notebook.add(chart, text="Chart\t    ")
+
+# Set the initial window title
+result.title("Detailed Report - Summary")
+
+# Bind the tab change event to the update_heading function
+notebook.bind("<<NotebookTabChanged>>", update_heading)
 
 # Domain Tab
 dos.configure(background='#010F57')
@@ -551,9 +568,6 @@ def phishing():
                 if domainString == 'gmail.com':
                     messageforurl = "No Risk for Phishing"
                     explanationforurl = "The email of the sender is a personal email."
-                #elif domainString != 'gmail.com':
-                    #messageforurl = "Low Risk for Phishing"
-                    #explanationforurl = "The url is a legitimate email associated with their institution."
                 else:
                     indexOfLessThan = fromStringValue.find('<')
                     if indexOfLessThan == -1:
