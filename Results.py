@@ -130,7 +130,8 @@ def googleapi():
         # print(results)
         # print(get_messages(service, "me"))
         # email = "Email Subject: " + get_message(service, 'me', '188006a34139969c')["snippet"]
-
+        if 'messages' not in results:
+            return
         for i in range(len(results['messages'])):
             message = get_message(service, 'me', results['messages'][i]['id'])
             print(str(i), message)
@@ -178,7 +179,7 @@ def googleapi():
                             values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam",
                                     "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
 
-            emctable.insert(parent="", index=i, iid=i, text="Row ",
+            emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text="Row ",
                             values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam",
                                     "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
             #hist_table.insert(parent="", index=i, iid=i, text="Row ",
@@ -306,6 +307,7 @@ def gotoscreens():
             creds = Credentials.from_authorized_user_file('token.json', SCOPES)
         else:
             creds = None
+        # creds = None
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
@@ -323,86 +325,100 @@ def gotoscreens():
         save_location = os.getcwd()
         email_messages = search_emails(query_string)
 
-        for email_message in email_messages:
-            messageDetail = get_message_detail(email_message['id'], msg_format='full', metadata_headers=['parts'])
-            messageDetailPayload = messageDetail.get('payload')
+        logotable.pack(side='left')
+        logoverscrlbar = ttk.Scrollbar(dos,
+                                      orient="vertical",
+                                      command=logotable.yview)
+        logoverscrlbar.pack(side='left', fill='y')
+        logotable.configure(yscrollcommand=logoverscrlbar.set)
+        logotable.heading("Logo", text="Logo")
+        logotable.heading("Subject", text="Subject")
+        logotable.heading("Analysis", text="Analysis")
+        if email_messages is not None:
+            for email_message in email_messages:
+                messageDetail = get_message_detail(email_message['id'], msg_format='full', metadata_headers=['parts'])
+                messageDetailPayload = messageDetail.get('payload')
 
-            if 'parts' in messageDetailPayload:
-                for msgPayload in messageDetailPayload['parts']:
-                    file_name = msgPayload['filename']
-                    body = msgPayload['body']
-                    if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
-                        if 'attachmentId' in body:
+                if 'parts' in messageDetailPayload:
+                    for msgPayload in messageDetailPayload['parts']:
+                        file_name = msgPayload['filename']
+                        body = msgPayload['body']
+                        if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                            if 'attachmentId' in body:
 
-                            attachment_id = body['attachmentId']
-                            attachment_content = get_file_data(email_message['id'], attachment_id, file_name, save_location)
+                                attachment_id = body['attachmentId']
+                                attachment_content = get_file_data(email_message['id'], attachment_id, file_name, save_location)
 
-                            with open(os.path.join(save_location, file_name), 'wb') as _f:
-                                _f.write(attachment_content)
-                                print(f'File \{file_name} is saved at {save_location}')
-                                model = torch.hub.load('ultralytics/yolov5','custom', 'best.pt')
+                                with open(os.path.join(save_location, file_name), 'wb') as _f:
+                                    _f.write(attachment_content)
+                                    print(f'File {file_name} is saved at {save_location}')
+                                    model = torch.hub.load('ultralytics/yolov5','custom', 'best.pt')
 
-                                # img_data = b'base64 string'
+                                    # img_data = b'base64 string'
 
-                                # with open("path/to/saved_image.jpg", "wb") as fh:
-                                #     fh.write(base64.decodebytes(img_data))
+                                    # with open("path/to/saved_image.jpg", "wb") as fh:
+                                    #     fh.write(base64.decodebytes(img_data))
 
-                                im = file_name
+                                    im = file_name
 
-                                result = model(im)
-                                result.print()
-                                resultArray = result.pandas().xyxy[0].value_counts('name')
-                                messageSnippet = messageDetail["snippet"]
-                                message = ""
-                                explanation = ""
-                                if len(resultArray) == 0:
-                                    message = "Possible phishing"
-                                    explanation = "Logo is not in the dataset of legit companies"
-                                else:
-                                    if result.pandas().xyxy[0].value_counts('name').axes[0][0].lower() in messageSnippet.lower():
-                                        message = "Not phishing"
-                                        explanation = f"Company logo({result.pandas().xyxy[0].value_counts('name').axes[0][0]}) found in the email message"
+                                    result = model(im)
+                                    result.print()
+                                    resultArray = result.pandas().xyxy[0].value_counts('name')
+                                    messageSnippet = messageDetail["snippet"]
+                                    message = ""
+                                    explanation = ""
+                                    if len(resultArray) == 0:
+                                        message = "Possible phishing"
+                                        explanation = "Logo is not in the dataset of legit companies"
                                     else:
-                                        message = "Possible Phishing"
-                                        explanation = "Company logo not found in the email message"
+                                        if result.pandas().xyxy[0].value_counts('name').axes[0][0].lower() in messageSnippet.lower():
+                                            message = "Not phishing"
+                                            explanation = f"Company logo({result.pandas().xyxy[0].value_counts('name').axes[0][0]}) found in the email message"
+                                        else:
+                                            message = "Possible Phishing"
+                                            explanation = "Company logo not found in the email message"
 
-                                totalMessages.append(messageDetail)
-                                # urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
-                                #                 values=(emailString, personalMessages[i]["snippet"], messageforurl,
-                                #                         explanationforurl))
-                                emctable.insert(parent="", index=len(totalMessages) + 1,
-                                                iid=len(totalMessages) + 1, text="",
-                                                values=(file_name, messageSnippet, message,
-                                                        explanation))
-            time.sleep(0.5)
+                                    totalMessages.append(messageDetail)
+                                    # urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
+                                    #                 values=(emailString, personalMessages[i]["snippet"], messageforurl,
+                                    #                         explanationforurl))
+                                    emctable.insert(parent="", index=len(totalMessages),
+                                                    iid=len(totalMessages), text="",
+                                                    values=(file_name, messageSnippet, message,
+                                                            explanation))
+                                    logotable.insert(parent="", index=len(totalMessages),
+                                                    iid=len(totalMessages), text="",
+                                                    values=(file_name, messageSnippet, message,
+                                                            explanation))
+                time.sleep(0.5)
     googleapi()
     phishing()
 
 # window
 # window
-result = Tk()
-result.title("E.P.B.I.P")
-result.geometry("700x550")
-result.resizable(False, False)
-result.iconbitmap(r'img\\logo.ico')
+# result = Tk()
+# result.title("E.P.B.I.P")
+# result.geometry("700x550")
+# result.resizable(False, False)
+# result.iconbitmap(r'img\\logo.ico')
 
 # Set the position of the terminal window
-def center_window(window):
-    window.update_idletasks()
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
-    window_width = window.winfo_width()
-    window_height = window.winfo_height()
-    x = (screen_width - window_width) // 2
-    y = (screen_height - window_height) // 3
-    window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+# def center_window(window):
+#     window.update_idletasks()
+#     screen_width = window.winfo_screenwidth()
+#     screen_height = window.winfo_screenheight()
+#     window_width = window.winfo_width()
+#     window_height = window.winfo_height()
+#     x = (screen_width - window_width) // 2
+#     y = (screen_height - window_height) // 3
+#     window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
 # Center the tkinter window
-center_window(result)
+# center_window(result)
 
-def gotoscreens():
-        googleapi()
-        phishing()
+# def gotoscreens():
+#         googleapi()
+#         phishing()
 
 # window
 result = Tk()
@@ -468,6 +484,7 @@ notebook.add(chart, text="Chart\t    ")
 dos.configure(background='#010F57')
 dosbg = ttk.Style
 dostable = ttk.Treeview(dos, columns=("Date", "Subject", "Analysis"), show="headings")
+logotable = ttk.Treeview(logo, columns=("Logo", "Subject", "Analysis"), show="headings")
 # Label(dos, text="The domain '@d1scord.com' has been found to be fraudulent. "
 #                 "\nIt appears to be mimicking 'discord.com'.", fg='white', width=75, height=50,
 #       bg='#010F57', bd=0, font=('Arial', 9, 'bold')).pack()
@@ -479,8 +496,8 @@ em_c.configure(background='#010F57')
 
 # Logo Tab
 logo.configure(background='#010F57')
-Label(logo, text="The logo has been found to be fraudulent.", fg='white', width=75, height=50,
-      bg='#010F57', bd=0, font=('Arial', 9, 'bold')).pack()
+# Label(logo, text="The  has been found to be fraudulent.", fg='white', width=75, height=50,
+#       bg='#010F57', bd=0, logofont=('Arial', 9, 'bold')).pack()
 
 # URL Tab
 url.configure(background='#010F57')
@@ -565,7 +582,7 @@ histtablehorscrlbar = ttk.Scrollbar(hist, orient="horizontal", command=hist_tabl
 
 # Configuring treeview
 hist_table.configure(xscrollcommand=histtablehorscrlbar.set, yscrollcommand=histtableverscrlbar.set)
-hist_table.heading("Date", text="Date/Email")
+hist_table.heading("Date", text="Details")
 hist_table.heading("Subject", text="Subject")
 hist_table.heading("Analysis", text="Analysis")
 hist_table.heading("Response", text="Response")
@@ -619,7 +636,7 @@ emctablehorscrlbar = ttk.Scrollbar(em_c, orient="horizontal", command=emctable.x
 # Configuring treeview
 emctable.configure(xscrollcommand=emctablehorscrlbar.set, yscrollcommand=emctableverscrlbar.set)
 
-emctable.heading("Date", text="Date/Email")
+emctable.heading("Date", text="Details")
 emctable.heading("Subject", text="Subject")
 emctable.heading("Analysis", text="Analysis")
 emctable.heading("Response", text="Response")
@@ -655,9 +672,9 @@ def selectItem(a):
     curItem = urltable.focus()
     print(urltable.item(curItem))
 
+
 def phishing():
     #UI
-
         # table.pack()
     # Constructing vertical scrollbar with treeview
     urltableverscrlbar = ttk.Scrollbar(url, orient="vertical", command=urltable.yview)
@@ -690,8 +707,8 @@ def phishing():
                 indexOfAtSign = fromStringValue.find('@')
                 domainString = fromStringValue[indexOfAtSign + 1:len(fromStringValue) - 1]
                 emailString = fromStringValue
-                if domainString == 'gmail.com':
-                    messageforurl = "No Risk for Phishing"
+                if domainString == 'gmail.com' or domainString == "yahoo.com":
+                    messageforurl = "Medium Risk for Phishing"
                     explanationforurl = "The email of the sender is a personal email."
                 #elif domainString != 'gmail.com':
                     #messageforurl = "Low Risk for Phishing"
@@ -723,7 +740,7 @@ def phishing():
                 totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl))
-                emctable.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
+                emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
                 #hist_table.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
                                 #values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
@@ -739,6 +756,7 @@ def phishing():
     # Place treeview and scrollbars
     urltable.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
     urltableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
+
 
 def callback():
     indexSelected = notebook.index(notebook.select())
