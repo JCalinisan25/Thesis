@@ -43,6 +43,8 @@ config = {
 firebase = pyrebase.initialize_app(config)
 database = firebase.database()
 
+
+
 # import firebase_admin
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
@@ -84,7 +86,6 @@ def get_mime_message(service, user_id, msg_id):
 messages = []
 creds = None
 
-
 def googleapi():
     """Shows basic usage of the Gmail API.
    Lists the user's Gmail labels.
@@ -120,8 +121,6 @@ def googleapi():
             message = get_message(service, 'me', results['messages'][i]['id'])
             print(str(i), message)
             messages.append(message)
-        dosbg = ttk.Style
-        dostable = ttk.Treeview(dos, columns=("Date", "Subject", "Analysis"), show="headings")
         # table.pack()
 
         # Calling pack method w.r.to treeview
@@ -174,11 +173,16 @@ def googleapi():
         dostable.column("Date", width=180)
         dostable.column("Subject", width=400)
         dostable.column("Analysis", width=200)
-        update_chart(dostable)
+        update_chart_spam(dostable)
 
+        #save_to_history(dostable)
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
         print(f'An error occurred: {error}')
+
+
+    
+    
 
 def delete(messageId):
     if os.path.exists('token.json'):
@@ -235,8 +239,8 @@ def printhi(emails):
 def gotoscreens():
         googleapi()
         phishing()
+        save_to_history(dostable, urltable)
 
-# window
 # window
 result = Tk()
 result.title("E.P.B.I.P")
@@ -298,6 +302,8 @@ notebook.add(chart, text="Chart\t    ")
 
 # Domain Tab
 dos.configure(background='#010F57')
+dosbg = ttk.Style
+dostable = ttk.Treeview(dos, columns=("Date", "Subject", "Analysis"), show="headings")
 # Label(dos, text="The domain '@d1scord.com' has been found to be fraudulent. "
 #                 "\nIt appears to be mimicking 'discord.com'.", fg='white', width=75, height=50,
 #       bg='#010F57', bd=0, font=('Arial', 9, 'bold')).pack()
@@ -316,16 +322,70 @@ Label(logo, text="The logo has been found to be fraudulent.", fg='white', width=
 url.configure(background='#010F57')
 
 
-# Function to save email data to the database
-def save_to_database(date, subject, analysis, response):
-    data = {
-        'date': date,
-        'subject': subject,
-        'analysis': analysis,
-        'response': response
-    }
-    database.child('emails').push(data)
+# Function to update the history table with result data
+def update_history_table(data):
+    hist_table.delete(*hist_table.get_children())  # Clear existing table entries
     
+    for i, entry in enumerate(data):
+        date = entry['date']
+        subject = entry['subject']
+        analysis = entry['analysis']
+        response = entry['response']
+      
+        hist_table.insert(parent="", index=i, iid=i, text="Row ",
+                          values=(date, subject, analysis, response))
+
+# Function to retrieve result data from dostable and urltable and save it to the history tab
+def save_to_history( urltable):
+    dos_items = dostable.get_children()  # Get all items in dostable
+    url_items = urltable.get_children()  # Get all items in urltable
+    
+    result_data = []
+    
+    for item in dos_items:
+        values = dostable.item(item)['values']
+        date = values[0]
+        subject = values[1]
+        analysis = values[2]
+        response = values[3]
+        
+        result_data.append({
+            'date': date,
+            'subject': subject,
+            'analysis': analysis,
+            'response': response
+        })
+
+    for item in url_items:
+        values = urltable.item(item)['values']
+        date = values[0]
+        subject = values[1]
+        analysis = values[2]
+        response = values[3]
+        
+        result_data.append({
+            'date': date,
+            'subject': subject,
+            'analysis': analysis,
+            'response': response
+        })
+        
+    # Save the result data to the database
+    database.child('Results').push(result_data)
+    
+    # Update the history table with the saved data
+    update_history_table(result_data)
+
+# Function to retrieve result data from the database
+def retrieve_result_data():
+    result_data = []
+    results = database.child("Results").get()
+    if results is not None:  # Check if results exist
+        for result in results.each():
+            result_data.append(result.val())
+    return result_data
+
+
 # History Tab
 hist.configure(background='#010F57')
 bg = ttk.Style
@@ -356,7 +416,7 @@ histtablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these valu
 
 
 # Function to update the chart with percentages of flagged and not flagged emails
-def update_chart(dostable):
+def update_chart_spam(dostable):
     items = dostable.get_children()  # Get all items in dostable
     total_emails = len(items)
     flagged_emails = 0
@@ -372,12 +432,39 @@ def update_chart(dostable):
         "Normal": not_flagged_emails / total_emails * 100
     }
 
-    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNot Flagged Emails: {not_flagged_emails}"
+    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNormal Emails: {not_flagged_emails}"
 
-    ax.clear()  # Clear the existing chart
-    ax.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
-    ax.set_title("Phishing Emails")
-    ax.text(0.5, -0.25, statistics, horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
+    ax2.clear()  # Clear the existing chart
+    ax2.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
+    ax2.set_title("Spam Emails")
+    ax2.text(0.1, 0.01, statistics, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
+    canvas.draw()
+
+
+
+#Function to update the chart with percentages of flagged and not flagged emails
+def update_chart_phish(urltable):
+    items = urltable.get_children()  # Get all items in dostable
+    total_emails = len(items)
+    flagged_emails = 0
+
+    for item in items:
+        analysis = urltable.item(item)['values'][2]
+        if analysis == "Low Risk for Phishing":
+            flagged_emails += 1
+
+    not_flagged_emails = total_emails - flagged_emails
+    percentages = {
+        "Phishing": flagged_emails / total_emails * 100,
+        "Normal": not_flagged_emails / total_emails * 100
+    }
+
+    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNormal Emails: {not_flagged_emails}"
+
+    ax1.clear()  # Clear the existing chart
+    ax1.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
+    ax1.set_title("Phishing Emails")
+    ax1.text(0.1, 0.01, statistics, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
     canvas.draw()
 
 
@@ -412,17 +499,19 @@ emctablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these value
 # Chart Tab
 chart.configure(background='#010F57')
 empty_frame = ttk.Frame(chart, height=100)
-fig = Figure(figsize=(4.9, 4), dpi=100)
-ax = fig.add_subplot(111)
-data = {"Phishing": 2, "Legitimate": 10}
-ax.pie(data.values(), labels=data.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
-ax.set_title("Phishing Emails")
-canvas = FigureCanvasTkAgg(fig, master=chart)
-canvas.draw()
-canvas.get_tk_widget().pack(pady=10)
+fig1 = Figure(figsize=(4.5, 4), dpi=80)
+ax1 = fig1.add_subplot(111)
+ax1.set_title("Phishing Emails")
+canvas = FigureCanvasTkAgg(fig1, master=chart)
+canvas.get_tk_widget().pack(side=LEFT,pady=10, padx=20)
+
+fig2 = Figure(figsize=(4.5, 4), dpi=80)
+ax2 = fig2.add_subplot(111)
+canvas = FigureCanvasTkAgg(fig2, master=chart)
+canvas.get_tk_widget().pack(side=RIGHT,pady=10, padx=20)
 
 urlbg = ttk.Style
-urltable = ttk.Treeview(url, columns=("Email", "Subject", "Source"), show="headings")
+urltable = ttk.Treeview(url, columns=("Email", "Subject", "Source", "Response"), show="headings")
 personalMessages = []
 
 
@@ -503,10 +592,12 @@ def phishing():
                 hist_table.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
     
-    urltable.column("Email", minwidth=240)
-    urltable.column("Subject", width=380)
-    urltable.column("Source", width=120)
-    urltable.bind('<Button-1>', selectItem)
+                urltable.column("Email", minwidth=240)
+                urltable.column("Subject", width=380)
+                urltable.column("Source", width=120)
+                urltable.bind('<Button-1>', selectItem)
+                update_chart_phish(urltable)
+
 
     # Place treeview and scrollbars
     urltable.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
