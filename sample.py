@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from tkinter import *
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
@@ -52,6 +52,8 @@ class EmailScanResult:
     def __init__(self, messageId, urlScore):
         self.messageId = messageId
         self.urlScore = urlScore
+
+
 def get_messages(service, user_id):
     try:
         EmailScanResult(None, None)
@@ -83,13 +85,10 @@ messages = []
 creds = None
 
 
-
 def googleapi():
     """Shows basic usage of the Gmail API.
    Lists the user's Gmail labels.
    """
-    emailString, messageforurl, explanationforurl = get_phishing_info()
-
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
@@ -167,9 +166,11 @@ def googleapi():
                                     "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
             
             emctable.insert(parent="", index=i, iid=i, text="Row ",
-                            values=(date,emailString, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", 
-                                    "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found.", messageforurl, explanationforurl) )
-            #update_emctable(emailString, messageforurl, explanationforurl)
+                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", 
+                                    "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
+            hist_table.insert(parent="", index=i, iid=i, text="Row ",
+                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", 
+                                    "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
         dostable.column("Date", width=180)
         dostable.column("Subject", width=400)
         dostable.column("Analysis", width=200)
@@ -178,7 +179,6 @@ def googleapi():
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
         print(f'An error occurred: {error}')
-
 
 def delete(messageId):
     if os.path.exists('token.json'):
@@ -315,10 +315,21 @@ Label(logo, text="The logo has been found to be fraudulent.", fg='white', width=
 # URL Tab
 url.configure(background='#010F57')
 
+
+# Function to save email data to the database
+def save_to_database(date, subject, analysis, response):
+    data = {
+        'date': date,
+        'subject': subject,
+        'analysis': analysis,
+        'response': response
+    }
+    database.child('emails').push(data)
+    
 # History Tab
 hist.configure(background='#010F57')
 bg = ttk.Style
-hist_table = ttk.Treeview(hist, columns=("Date", "Email", "Subject", "Spam", "Phishing", "Warning", "Recommendation"), show="headings")
+hist_table = ttk.Treeview(hist, columns=("Date", "Subject", "Analysis", "Response"), show="headings")
 # table.pack()
 
 # Constructing vertical scrollbar with treeview
@@ -329,70 +340,20 @@ histtablehorscrlbar = ttk.Scrollbar(hist, orient="horizontal", command=hist_tabl
 
 # Configuring treeview
 hist_table.configure(xscrollcommand=histtablehorscrlbar.set, yscrollcommand=histtableverscrlbar.set)
-hist_table.heading("Date", text="Date")
-hist_table.heading("Email", text="Email")
+hist_table.heading("Date", text="Date/Email")
 hist_table.heading("Subject", text="Subject")
-hist_table.heading("Spam", text="Spam")
-hist_table.heading("Phishing", text="Phishing")
-hist_table.heading("Warning", text="Warning")
-hist_table.heading("Recommendation", text="Recommendation")
-hist_table.column("Date", minwidth=180)
-hist_table.column("Email", width=240)
+hist_table.heading("Analysis", text="Analysis")
+hist_table.heading("Response", text="Response")
+hist_table.column("Date", minwidth=240)
 hist_table.column("Subject", width=400)
-hist_table.column("Spam", width=200)
-hist_table.column("Phishing", minwidth=200)
-hist_table.column("Warning", width=450)
-hist_table.column("Recommendation", width=350)
+hist_table.column("Analysis", width=130)
+hist_table.column("Response", width=400)
 
 # Place treeview and scrollbars
 hist_table.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
 histtableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
 histtablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these values as needed
 
-
-# Function to update the history table with result data
-def update_history_table(data):
-    hist_table.delete(*hist_table.get_children())  # Clear existing table entries
-
-    for i, entry in enumerate(data):
-        date = entry['date']
-        subject = entry['subject']
-        response = entry['response']
-
-        hist_table.insert(parent="", index=i, iid=i, text="Row ",
-                     values=(date, subject, response))
-
-# Function to retrieve result data from dostable and save it to the history tab
-def save_to_history(dostable):
-    items = dostable.get_children()  # Get all items in dostable
-
-    result_data = []
-    for item in items:
-        values = dostable.item(item)['values']
-        date = values[0]
-        subject = values[1]
-        response = values[2]
-
-        result_data.append({
-            'date': date,
-            'subject': subject,
-            'response': response
-        })
-
-    # Save the result data to the database
-    database.child('Results').push(result_data)
-
-    # Update the history table with the saved data
-    update_history_table(result_data)
-
-# Function to retrieve result data from the database
-def retrieve_result_data():
-    result_data = []
-    results = database.child("Results").get()
-    if results is not None:  # Check if results exist
-        for result in results.each():
-            result_data.append(result.val())
-    return result_data
 
 # Function to update the chart with percentages of flagged and not flagged emails
 def update_chart(dostable):
@@ -421,7 +382,7 @@ def update_chart(dostable):
 
 
 emcbg = ttk.Style
-emctable = ttk.Treeview(em_c, columns=("Date", "Email", "Subject", "Spam","Phishing", "Warning", "Response"), show="headings")
+emctable = ttk.Treeview(em_c, columns=("Date", "Subject", "Analysis", "Response"), show="headings")
 # table.pack()
 
 # Constructing vertical scrollbar with treeview
@@ -433,32 +394,20 @@ emctablehorscrlbar = ttk.Scrollbar(em_c, orient="horizontal", command=emctable.x
 # Configuring treeview
 emctable.configure(xscrollcommand=emctablehorscrlbar.set, yscrollcommand=emctableverscrlbar.set)
 
-emctable.heading("Date", text="Date")
-emctable.heading("Email", text="Email")
+emctable.heading("Date", text="Date/Email")
 emctable.heading("Subject", text="Subject")
-emctable.heading("Spam", text="Analysis(Spam)")
-emctable.heading("Phishing", text="Analysis(Phishing)")
-emctable.heading("Warning", text="Warning")
+emctable.heading("Analysis", text="Analysis")
 emctable.heading("Response", text="Response")
-emctable.column("Date", minwidth=100)
-emctable.column("Email", width=200)
-emctable.column("Subject", width=200)
-emctable.column("Spam", width=200)
-emctable.column("Phishing", width=200)
-emctable.column("Warning", width=200)
-emctable.column("Response", width=400)
+emctable.column("Date", minwidth=240)
+emctable.column("Subject", width=400)
+emctable.column("Analysis", width=130)
+emctable.column("Response", width=450)
 
 # Place treeview and scrollbars
 emctable.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
 emctableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
 emctablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these values as needed
 
-def update_emctable(emailString, messageforurl, explanationforurl):
-    # Clear existing entries in emctable
-    emctable.delete(*emctable.get_children())
-    # Insert new entry
-    emctable.insert(parent="", index=0, iid=0, text="Row ",
-                    values=(0, emailString, "Subject", "Message", "Analysis"))
 
 # Chart Tab
 chart.configure(background='#010F57')
@@ -473,7 +422,7 @@ canvas.draw()
 canvas.get_tk_widget().pack(pady=10)
 
 urlbg = ttk.Style
-urltable = ttk.Treeview(url, columns=("Email", "Subject", "Source", "Response"), show="headings")
+urltable = ttk.Treeview(url, columns=("Email", "Subject", "Source"), show="headings")
 personalMessages = []
 
 
@@ -481,14 +430,9 @@ def selectItem(a):
     curItem = urltable.focus()
     print(urltable.item(curItem))
 
-emailString = ""
-messageforurl = ""
-explanationforurl = ""
 def phishing(): 
     #UI
-    global emailString
-    global messageforurl
-    global explanationforurl
+
         # table.pack()
     # Constructing vertical scrollbar with treeview
     urltableverscrlbar = ttk.Scrollbar(url, orient="vertical", command=urltable.yview)
@@ -501,7 +445,6 @@ def phishing():
     urltable.heading("Email", text="Email")
     urltable.heading("Subject", text="Subject")
     urltable.heading("Source", text="Analysis")
-    urltable.heading("Response", text="Warning")
     #data
     # messageforurl = []
     for i in range(len(messages)):
@@ -554,26 +497,20 @@ def phishing():
                 #             explanationforurl = "The sender's email looks legitimate."
                 totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
+                                values=(emailString, personalMessages[i]["snippet"], messageforurl))
+                emctable.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
+                                values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
+                hist_table.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
     
     urltable.column("Email", minwidth=240)
-    urltable.column("Subject", width=450)
-    urltable.column("Source", minwidth=120)
-    urltable.column("Response", width=450)
+    urltable.column("Subject", width=380)
+    urltable.column("Source", width=120)
     urltable.bind('<Button-1>', selectItem)
 
     # Place treeview and scrollbars
     urltable.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
     urltableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
-    urltablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these values as needed
-    
-def get_phishing_info():
-    #selected_item = emctable.focus()
-    #values = emctable.item(selected_item)['values']
-    #emailString = values[1]
-    #messageforurl = values[2]
-    #explanationforurl = values[3]
-    return emailString, messageforurl, explanationforurl
 
 def callback():
     indexSelected = notebook.index(notebook.select())
@@ -595,9 +532,8 @@ spamButton = Button(result, text="Move to trash", command=callback)
 spamButton.place(x=350, y=15)
 
 bck_btn = Button(result, text="Return to dashboard", command=todash)
-bck_btn.place(x=750, y=15)
+bck_btn.place(x=770, y=15)
 
 # Exit Button
 result.after(0, gotoscreens)
 result.mainloop()
- 
