@@ -55,13 +55,9 @@ database = firebase.database()
 
 
 # import firebase_admin
-# firebase = pyrebase.initialize_app(config)
-# database = firebase.database()
-# import firebase_admin
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
 totalMessages = []
-# db = firebase.database()
 
 class EmailScanResult:
     def __init__(self, messageId, urlScore):
@@ -111,6 +107,7 @@ def googleapi():
     else:
         creds = None
     # If there are no (valid) credentials available, let the user log in.
+    #creds = None
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
@@ -138,26 +135,18 @@ def googleapi():
             messages.append(message)
         # table.pack()
 
-        # Calling pack method w.r.to treeview
-        dostable.pack(side='left')
+        # Constructing vertical scrollbar with treeview
+        dostableverscrlbar = ttk.Scrollbar(dos, orient="vertical", command=dostable.yview)
 
-        # root= tk.Tk()
-        # dosverscrlbar = ttk.Scrollbar(dostable)
-        # dosverscrlbar.pack(side='bottom', fill='y')
+        # Constructing horizontal scrollbar with treeview
+        dostablehorscrlbar = ttk.Scrollbar(dos, orient="horizontal", command=dostable.xview)
 
-        # Constructing vertical scrollbar
-        # with treeview
-        dosverscrlbar = ttk.Scrollbar(dos,
-                                      orient="vertical",
-                                      command=dostable.yview)
-        # Calling pack method w.r.to vertical
-        # scrollbar
-        dosverscrlbar.pack(side='left', fill='y')
         # Configuring treeview
-        dostable.configure(yscrollcommand=dosverscrlbar.set)
+        dostable.configure(xscrollcommand=dostablehorscrlbar.set, yscrollcommand=dostableverscrlbar.set)
         dostable.heading("Date", text="Date")
         dostable.heading("Subject", text="Subject")
         dostable.heading("Analysis", text="Analysis")
+        dostable.heading("Response", text="Response")
         subjectsToPredict = []
         for i in range(len(messages)):
             subjectsToPredict.append(messages[i]["snippet"])
@@ -186,14 +175,23 @@ def googleapi():
                             #values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam",
                                     #"The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
         dostable.column("Date", width=180)
-        dostable.column("Subject", width=400)
-        dostable.column("Analysis", width=200)
-        update_chart(dostable)
+        dostable.column("Subject", width=565)
+        dostable.column("Analysis", width=130)
+        dostable.column("Response", width=330)
+        dostable.place(x=0, y=99, width=900, height=250)  # Adjust these values as needed
+        dostableverscrlbar.place(x=877, y=0, width=20, height=465)  # Adjust these values as needed
+        dostablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+        update_chart_spam(dostable)
 
         #save_to_history(dostable)
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
         print(f'An error occurred: {error}')
+
+
+    
+    
+
 def delete(messageId):
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
@@ -395,32 +393,6 @@ def gotoscreens():
     phishing()
 
 # window
-# window
-# result = Tk()
-# result.title("E.P.B.I.P")
-# result.geometry("700x550")
-# result.resizable(False, False)
-# result.iconbitmap(r'img\\logo.ico')
-
-# Set the position of the terminal window
-# def center_window(window):
-#     window.update_idletasks()
-#     screen_width = window.winfo_screenwidth()
-#     screen_height = window.winfo_screenheight()
-#     window_width = window.winfo_width()
-#     window_height = window.winfo_height()
-#     x = (screen_width - window_width) // 2
-#     y = (screen_height - window_height) // 3
-#     window.geometry(f"{window_width}x{window_height}+{x}+{y}")
-
-# Center the tkinter window
-# center_window(result)
-
-# def gotoscreens():
-#         googleapi()
-#         phishing()
-
-# window
 result = Tk()
 result.title("E.P.B.I.P")
 result.geometry("900x550")
@@ -446,6 +418,10 @@ def dash():
     result.destroy()
     os.system('Dashboard.py')
 
+def update_heading(event):
+    selected_tab = notebook.tab(notebook.select(), "text")
+    heading.config(text=selected_tab)
+
 
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
@@ -460,9 +436,17 @@ box_1.place(x=3, y=5)
 heading = Label(result, text='Detailed Report', fg='white', bg='#010F57', font=('Arial', 30, 'bold'))
 heading.place(x=10, y=5)
 
+
+def update_tab_title(event):
+    selected_tab = notebook.tab(notebook.select(), "text")
+    result.title(f"Detailed Report - {selected_tab}")
+
 # widget that manages a collection of windows/displays
-notebook = ttk.Notebook(result)
-notebook.pack(pady=70)
+notebook = ttk.Notebook(result, height=465, width = 895)
+notebook.place(x=1,y=60)
+
+# Bind the event to update the tab title
+notebook.bind("<<NotebookTabChanged>>", update_tab_title)
 
 # Tab results
 gback = Button(notebook)
@@ -479,6 +463,12 @@ notebook.add(url, text="URL/s\t    ")
 notebook.add(logo, text="Logo\t    ")
 notebook.add(hist, text="History\t    ")
 notebook.add(chart, text="Chart\t    ")
+
+# Set the initial window title
+result.title("Detailed Report - Summary")
+
+# Bind the tab change event to the update_heading function
+notebook.bind("<<NotebookTabChanged>>", update_heading)
 
 # Domain Tab
 dos.configure(background='#010F57')
@@ -551,7 +541,7 @@ def save_to_history( urltable):
             'analysis': analysis,
 
         })
-    
+
     # Save the result data to the database
     database.child('Results').push(result_data)
     
@@ -587,18 +577,18 @@ hist_table.heading("Subject", text="Subject")
 hist_table.heading("Analysis", text="Analysis")
 hist_table.heading("Response", text="Response")
 hist_table.column("Date", minwidth=240)
-hist_table.column("Subject", width=400)
+hist_table.column("Subject", width=510)
 hist_table.column("Analysis", width=130)
 hist_table.column("Response", width=400)
 
 # Place treeview and scrollbars
-hist_table.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
-histtableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
-histtablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these values as needed
+hist_table.place(x=0, y=99, width=900, height=250)  # Adjust these values as needed
+histtableverscrlbar.place(x=877, y=0, width=20, height=465)  # Adjust these values as needed
+histtablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
 
 
 # Function to update the chart with percentages of flagged and not flagged emails
-def update_chart(dostable):
+def update_chart_spam(dostable):
     items = dostable.get_children()  # Get all items in dostable
     total_emails = len(items)
     flagged_emails = 0
@@ -610,16 +600,43 @@ def update_chart(dostable):
 
     not_flagged_emails = total_emails - flagged_emails
     percentages = {
+        "Spam": flagged_emails / total_emails * 100,
+        "Normal": not_flagged_emails / total_emails * 100
+    }
+
+    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNormal Emails: {not_flagged_emails}"
+
+    ax2.clear()  # Clear the existing chart
+    ax2.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
+    ax2.set_title("Spam Emails")
+    ax2.text(0.1, 0.01, statistics, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
+    canvas.draw()
+
+
+
+#Function to update the chart with percentages of flagged and not flagged emails
+def update_chart_phish(urltable):
+    items = urltable.get_children()  # Get all items in dostable
+    total_emails = len(items)
+    flagged_emails = 0
+
+    for item in items:
+        analysis = urltable.item(item)['values'][2]
+        if analysis == "Low Risk for Phishing" or analysis == "The sender's email is disposable":
+            flagged_emails += 1
+
+    not_flagged_emails = total_emails - flagged_emails
+    percentages = {
         "Phishing": flagged_emails / total_emails * 100,
         "Normal": not_flagged_emails / total_emails * 100
     }
 
-    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNot Flagged Emails: {not_flagged_emails}"
+    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNormal Emails: {not_flagged_emails}"
 
-    ax.clear()  # Clear the existing chart
-    ax.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
-    ax.set_title("Phishing Emails")
-    ax.text(0.5, -0.25, statistics, horizontalalignment='center', verticalalignment='center', transform=ax.transAxes)
+    ax1.clear()  # Clear the existing chart
+    ax1.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
+    ax1.set_title("Phishing Emails")
+    ax1.text(0.1, 0.01, statistics, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
     canvas.draw()
 
 
@@ -641,30 +658,31 @@ emctable.heading("Subject", text="Subject")
 emctable.heading("Analysis", text="Analysis")
 emctable.heading("Response", text="Response")
 emctable.column("Date", minwidth=240)
-emctable.column("Subject", width=400)
+emctable.column("Subject", width=510)
 emctable.column("Analysis", width=130)
 emctable.column("Response", width=450)
 
 # Place treeview and scrollbars
-emctable.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
-emctableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
-emctablehorscrlbar.place(x=0, y=365, width=782, height=20)  # Adjust these values as needed
+emctable.place(x=0, y=99, width=900, height=250)  # Adjust these values as needed
+emctableverscrlbar.place(x=877, y=0, width=20, height=465)  # Adjust these values as needed
+emctablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
 
 
 # Chart Tab
 chart.configure(background='#010F57')
 empty_frame = ttk.Frame(chart, height=100)
-fig = Figure(figsize=(4.9, 4), dpi=100)
-ax = fig.add_subplot(111)
-data = {"Phishing": 2, "Legitimate": 10}
-ax.pie(data.values(), labels=data.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
-ax.set_title("Phishing Emails")
-canvas = FigureCanvasTkAgg(fig, master=chart)
-canvas.draw()
-canvas.get_tk_widget().pack(pady=10)
+fig1 = Figure(figsize=(4.2, 4), dpi=100)
+ax1 = fig1.add_subplot(111)
+canvas = FigureCanvasTkAgg(fig1, master=chart)
+canvas.get_tk_widget().pack(side=LEFT,pady=10, padx=20)
+
+fig2 = Figure(figsize=(3.9, 4), dpi=100)
+ax2 = fig2.add_subplot(111)
+canvas = FigureCanvasTkAgg(fig2, master=chart)
+canvas.get_tk_widget().pack(side=RIGHT,pady=10, padx=20)
 
 urlbg = ttk.Style
-urltable = ttk.Treeview(url, columns=("Email", "Subject", "Source"), show="headings")
+urltable = ttk.Treeview(url, columns=("Email", "Subject", "Source", "Response"), show="headings")
 personalMessages = []
 
 
@@ -672,9 +690,9 @@ def selectItem(a):
     curItem = urltable.focus()
     print(urltable.item(curItem))
 
-
 def phishing():
     #UI
+
         # table.pack()
     # Constructing vertical scrollbar with treeview
     urltableverscrlbar = ttk.Scrollbar(url, orient="vertical", command=urltable.yview)
@@ -687,6 +705,7 @@ def phishing():
     urltable.heading("Email", text="Email")
     urltable.heading("Subject", text="Subject")
     urltable.heading("Source", text="Analysis")
+    urltable.heading("Response", text="Response")
     #data
     # messageforurl = []
     for i in range(len(messages)):
@@ -710,9 +729,6 @@ def phishing():
                 if domainString == 'gmail.com' or domainString == "yahoo.com":
                     messageforurl = "Medium Risk for Phishing"
                     explanationforurl = "The email of the sender is a personal email."
-                #elif domainString != 'gmail.com':
-                    #messageforurl = "Low Risk for Phishing"
-                    #explanationforurl = "The url is a legitimate email associated with their institution."
                 else:
                     indexOfLessThan = fromStringValue.find('<')
                     if indexOfLessThan == -1:
@@ -734,9 +750,9 @@ def phishing():
                         # uncomment
                 #         response = requests.get(urlString, headers=headers, params=querystring)
                 #         if response.json()["disposable"] == True:
-                #             explanationforurl = "The sender's email is disposable"
+                #             messageforurl = "The sender's email is disposable"
                 #         else:
-                #             explanationforurl = "The sender's email looks legitimate."
+                #             messageforurl = "The sender's email looks legitimate."
                 totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl))
@@ -744,19 +760,20 @@ def phishing():
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
                 #hist_table.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
                                 #values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
-
+    
                 urltable.column("Email", minwidth=240)
-                urltable.column("Subject", width=380)
+                urltable.column("Subject", width=515)
                 urltable.column("Source", width=120)
+                urltable.column("Response", width=450)
                 urltable.bind('<Button-1>', selectItem)
-
+                update_chart_phish(urltable)
                 save_to_history(urltable)
 
 
     # Place treeview and scrollbars
-    urltable.place(x=0, y=79, width=800, height=226)  # Adjust these values as needed
-    urltableverscrlbar.place(x=781, y=0, width=20, height=384)  # Adjust these values as needed
-
+    urltable.place(x=0, y=99, width=900, height=250)  # Adjust these values as needed
+    urltableverscrlbar.place(x=877, y=0, width=20, height=465)  # Adjust these values as needed
+    urltablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
 
 def callback():
     indexSelected = notebook.index(notebook.select())

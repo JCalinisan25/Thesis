@@ -63,20 +63,15 @@ def home():
     box_2 = Frame(dash, width=415, height=415, bg='#010F57')
     box_2.place(x=20, y=20)
 
-    profile_photo = Label(box_2, image=per_pk, border=0)
-    profile_photo.place(x=160, y=15)
-
-    # select_btn = Button(box_2, image= edit_pk, bg='#010F57' , bd=0, cursor="hand2", 
-    #                 command=select_image, width=15, activebackground='#010F57', 
-    #                 activeforeground='#C64CCD')
-    # select_btn.place(x=160, y=100)
-
     brgr_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu,
                       activebackground='#010F57')
     brgr_btn.place(x=10, y=5)
 
-    username = Label(box_2, text=username_label_text, fg='white', bg='#010F57', font=('Arial', 15, 'bold'))
-    username.place(x=150, y=130)
+    lbl2 = Label(box_2, bg='#010F57',image=logo_pk)
+    lbl2.place(x=150, y=10)
+
+    username = Label(box_2, text=username_label_text, fg='white', bg='#010F57', font=('Arial', 25, 'bold'))
+    username.place(x=100, y=120)
 
     lg_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=lg_pk, cursor='hand2', command=tosign)
     lg_btn.place(x=370, y=5)
@@ -92,9 +87,6 @@ def manual():
     f1.destroy()
     f3=Frame(box_2,width=415, height=415,bg='#010F57')
     f3.place(x=0, y=0)
-    l3=Label(f3,text='Acer',fg='white',bg='white')
-    l3.config(font=('Comic Sans MS',90))
-    l3.place(x=290,y=150-45)
     brgr_btn = Button(f3, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu)
     brgr_btn.place(x=10, y=5)
    
@@ -104,9 +96,6 @@ def about():
     f1.destroy()
     f4=Frame(box_2,width=415, height=415,bg='#010F57')
     f4.place(x=0, y=0)
-    l4=Label(f4,text='Dell',fg='white',bg='white')
-    l4.config(font=('Comic Sans MS',90))
-    l4.place(x=320,y=150-45)
     brgr_btn = Button(f4, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu)
     brgr_btn.place(x=10, y=5)
 
@@ -160,25 +149,6 @@ def toggle_menu():
                 cursor='hand2', command=dele, activebackground='#010F57', activeforeground='white')
     close.place(x=5, y=1)
 
-def select_image():
-    file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.jpeg *.png")])
-    if file_path:
-        profile_image = Image.open(file_path)
-        profile_image = profile_image.resize((95, 100))
-        
-    # Create a circular mask
-        mask = Image.new("L", (95, 100), 255)
-        draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0, 95, 100), fill=255)
-        
-    # Apply the circular mask to the image
-        profile_image = ImageTk.PhotoImage(Image.composite(profile_image, Image.new("RGB", profile_image.size, (1, 15, 87, 0)), mask))
-        
-    # Configure the image for the profile_photo label
-        profile_photo.config(image=profile_image)
-        profile_photo.image = profile_image
-
-
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
 bck_pk = ImageTk.PhotoImage(bg_0.resize((450, 450)))
@@ -191,23 +161,12 @@ lbl1.place(x=1, y=1)
 box_2 = Frame(dash, width=415, height=415, bg='#010F57')
 box_2.place(x=20, y=20)
 
-person = Image.open("img\\person.JPG")
-per_pk = ImageTk.PhotoImage(person.resize((95, 100)))
+logo = Image.open("img\\logoo.png")
+logo_pk = ImageTk.PhotoImage(logo.resize((105, 105)))
 
-profile_photo = Label(box_2, image=per_pk, border=0)
-profile_photo.place(x=160, y=15)
-
-edit = Image.open("img\\pencil.png")
-edit_pk = ImageTk.PhotoImage(edit.resize((15, 15)))
-
-pencil = Label( image=edit_pk)
-
-# select_btn = Button(box_2, image= edit_pk, bg='#010F57' , bd=0, cursor="hand2", 
-#                     command=select_image, width=15, activebackground='#010F57', 
-#                     activeforeground='#C64CCD')
-# select_btn.place(x=150, y=100)
-
-
+lbl2 = Label(box_2, bg='#010F57',image=logo_pk)
+lbl2.place(x=150, y=10)
+ 
 brgr = Image.open("img\\hamburger.png")
 brgr_pk = ImageTk.PhotoImage(brgr.resize((35, 35)))
 
@@ -234,9 +193,9 @@ for user in users.each():
         username = user.val()['username']
         break
 
-username_label_text = f"Hi, {username}"
-user = Label(box_2, text=username_label_text, fg='white', bg='#010F57', font=('Arial', 15, 'bold'))
-user.place(x=150, y=130)
+username_label_text = f"Hi!, {username}"
+user = Label(box_2, text=username_label_text, fg='white', bg='#010F57', font=('Arial', 25, 'bold'))
+user.place(x=100, y=120)
 
 # logout
 log = Image.open("img\\logout.JPG")
