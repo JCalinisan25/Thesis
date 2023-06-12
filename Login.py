@@ -1,38 +1,7 @@
-from __future__ import print_function
-
 from tkinter import *
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os, re, pyrebase, json
-import base64
-import email
-import spampy
-from google_auth_oauthlib.flow import InstalledAppFlow
-from urlchecker.core.urlproc import UrlCheckResult
-
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-import numpy as np  # linear algebra
-import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
-
-
-# Input data files are available in the read-only "../input/" directory
-# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
-
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split
-
-
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-
-
-import os.path
 
 # Access the Realtime Database and retrieve data
 config = {
@@ -69,129 +38,6 @@ def center_window(window):
 
 # Center the tkinter window
 center_window(login)
-
-# If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-
-
-def get_messages(service, user_id):
-   try:
-       return service.users().messages().list(userId=user_id).execute()
-   except Exception as error:
-       print('An error occurred: %s' % error)
-
-
-def get_message(service, user_id, msg_id):
-   try:
-       return service.users().messages().get(userId=user_id, id=msg_id, format='metadata').execute()
-   except Exception as error:
-       print('An error occurred: %s' % error)
-
-
-def get_mime_message(service, user_id, msg_id):
-   try:
-       message = service.users().messages().get(userId=user_id, id=msg_id,
-                                                format='raw').execute()
-       print('Message snippet: %s' % message['snippet'])
-       msg_str = base64.urlsafe_b64decode(message['raw'].encode("utf-8")).decode("utf-8")
-       mime_msg = email.message_from_string(msg_str)
-       return mime_msg
-   except Exception as error:
-       print('An error occurred: %s' % error)
-
-
-def main():
-   """Shows basic usage of the Gmail API.
-   Lists the user's Gmail labels.
-   """
-   creds = None
-   # The file token.json stores the user's access and refresh tokens, and is
-   # created automatically when the authorization flow completes for the first
-   # time.
-   if os.path.exists('token.json'):
-       creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-   # If there are no (valid) credentials available, let the user log in.
-   if not creds or not creds.valid:
-       if creds and creds.expired and creds.refresh_token:
-           creds.refresh(Request())
-       else:
-           flow = InstalledAppFlow.from_client_secrets_file(
-               'credentials.json', SCOPES)
-           creds = flow.run_local_server(port=0)
-       # Save the credentials for the next run
-       with open('token.json', 'w') as token:
-           token.write(creds.to_json())
-
-
-   try:
-       # Call the Gmail API
-       service = build('gmail', 'v1', credentials=creds)
-       results = service.users().labels().list(userId='me').execute()
-       labels = results.get('labels', [])
-
-
-       print(get_messages(service, "me"))
-       email = "Email Subject: " + get_message(service, 'me', '188006a34139969c')["snippet"]
-
-
-       print(email)
-       # if not labels:
-       #     print('No labels found.')
-       #     return
-       # print('Labels:')
-       # for label in labels:
-       #     print(label['name'])
-
-
-   except HttpError as error:
-       # TODO(developer) - Handle errors from gmail API.
-       print(f'An error occurred: {error}')
-
-
-def main2():
-
-
-
-
-   for dirname, _, filenames in os.walk('/kaggle/input'):
-       for filename in filenames:
-           print(os.path.join(dirname, filename))
-
-
-   # You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using "Save & Run All"
-   # You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session
-
-
-   def print_hi(name):
-       # Use a breakpoint in the code line below to debug your script.
-       data = pd.read_csv('spam.csv')
-       # print(data)
-       data.columns
-       # data.info()
-       # data.isna().sum()
-       data['Spam'] = data['Category'].apply(lambda x: 1 if x == 'spam' else 0)
-       print(data.head(5))
-
-
-       X_train, X_test, y_train, y_test = train_test_split(data.Message, data.Spam, test_size=0.25)
-
-
-       # for dirname, _, filenames in os.walk('/kaggle/input'):
-       #     for filename in filenames:
-       #         print(os.path.join(dirname, filename))
-
-
-       clf = Pipeline([
-           ('vectorizer', CountVectorizer()),
-           ('nb', MultinomialNB())
-       ])
-       clf.fit(X_train, y_train)
-       emails = ["Hi goodmorning how are you!",
-                 "Hi if ur lookin 4 saucy daytime fun wiv busty married woman Am free all next week Chat now 2 sort time 09099726429 JANINExx Calls£1/minMobsmoreLKPOBOX177HP51FL "
-                 ]
-       clf.predict(emails)
-       print("prediction: ", clf.score(X_test, y_test))
-       print(clf.predict(emails))
 
 # Email validation
 def is_valid_email(email):
@@ -237,13 +83,13 @@ def invalid():
     email = usernm.get()
     password = passw.get()
     if email == 'Example@email.com' and password == 'Password':
-        messagebox.showerror("Error", "Please enter your email and password!")
+        messagebox.showerror("Error", "Please enter your email and password.")
     elif email == 'Example@email.com' or email == '':
-        messagebox.showerror("Error", "Please enter your email address!")
+        messagebox.showerror("Error", "Please enter your email address.")
     elif not is_valid_email(email):
             messagebox.showerror("Error", "Invalid Email Format!")
     elif password == 'Password' or password == '':
-        messagebox.showerror("Error", "Please enter your password!")
+        messagebox.showerror("Error", "Please enter your password")
     else:
         try:
             user = auth.sign_in_with_email_and_password(email, password)
@@ -297,7 +143,7 @@ log_name = Label(box_2, text='Sign In', fg='#021976', bg='White', font=('Copperp
 log_name.place(x=100, y=40)
 
 # User
-usernm = Entry(box_2, width=25, fg='#9098ba', border=0, bg='white', font=('Arial', 11, 'bold'), show="")
+usernm = Entry(box_2, width=25, fg='#9098ba', border=0, bg='white', font=('Arial', 11, 'bold') )
 usernm.place(x=50, y=125)
 usernm.insert(0, 'Example@email.com')
 usernm.bind('<FocusIn>', on_entry)
@@ -306,7 +152,7 @@ usernm.bind('<Button-1>', remove_focus)
 Frame(box_2, width=205, height=2, bg='#010F57').place(x=48, y=145)
 
 # Password
-passw = Entry(box_2, width=22, fg='#9098ba', border=0, bg='white', font=('Arial', 11, 'bold'), show="")
+passw = Entry(box_2, width=22, fg='#9098ba', border=0, bg='white', font=('Arial', 11, 'bold'))
 passw.place(x=50, y=175)
 passw.insert(0, 'Password')
 passw.bind('<FocusIn>', on_enter)

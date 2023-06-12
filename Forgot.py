@@ -39,14 +39,14 @@ def center_window(window):
 center_window(forgot)
 
 def on_in(e):
-    if f_pass.get() == "Enter Email":
+    if f_pass.get() == "Example@email.com":
         f_pass.delete(0, 'end')
         f_pass.configure(foreground="black")
 
 
 def on_out(e):
     if f_pass.get() == "":
-        f_pass.insert(0, "Enter Email")
+        f_pass.insert(0, "Example@email.com")
         f_pass.configure(foreground="grey")
 
 
@@ -55,16 +55,19 @@ def log():
     forgot.destroy()
     os.system("Login.py")
 
+def remove_focus(e):
+    forgot.focus()
+
 # Function to reset password
 def reset_password():
     email = f_pass.get()
-    if email == "Enter Email" or email == "":
-        messagebox.showerror("Error", "Please enter your email!")
+    if email == "Example@email.com" or email == "":
+        messagebox.showerror("Error", "Please enter your email.")
     else:
 
         try:
             auth.send_password_reset_email(email)
-            messagebox.showinfo("Success", "Password reset request was sent successfully.")
+            messagebox.showinfo("Success", "Password reset request has been sent successfully.")
             forgot.destroy()
             os.system("Login.py")
         except requests.exceptions.HTTPError as e:
@@ -101,18 +104,19 @@ log_name.place(x=130, y=90)
 box_2 = Frame(box_1, width=450, height=3, bg='white')
 box_2.place(x=1, y=120)
 
-heading = Label(box_1, text='Forgotten your password?', fg='white', bg='#010F57', font=('Arial', 16, 'bold'))
-heading.place(x=5, y=125)
+heading = Label(box_1, text='Forgot your password?', fg='white', bg='#010F57', font=('Arial', 16, 'bold'))
+heading.place(x=2, y=125)
 
-info = Label(box_1, text="Enter your email to reset your password.", fg='white',
+info = Label(box_1, text="Please enter your email to reset your password.", fg='white',
              bg='#010F57', font=('Arial', 11, 'bold'))
-info.place(x=40, y=160)
+info.place(x=10, y=160)
 
 f_pass = Entry(box_1, width=35, fg='grey', border=1, bg='white', font=('Arial', 12, 'bold'), show="")
 f_pass.place(x=27, y=210)
-f_pass.insert(0, 'Enter Email')
+f_pass.insert(0, 'Example@email.com')
 f_pass.bind('<FocusIn>', on_in)
 f_pass.bind('<FocusOut>', on_out)
+f_pass.bind('<Button-1>', remove_focus)
 
 # button
 btn1 = Button(box_1, width=15, pady=5, text="Reset Password", bg='white', fg='black', cursor='hand2', border=0,
