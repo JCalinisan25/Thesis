@@ -184,12 +184,12 @@ def check_password_match(event):
         cpass_indi.config(text='')
 
 def validate_username(*args):
-    username = usernm.get()
-    if len(username) > 8:
-        new_username = username[:8]  # Truncate the username to 8 characters
-        usernm.delete(0, "end")  # Clear the current entry
-        usernm.insert(0, new_username)  # Set the truncated username
-    return True  # Always return True to allow the input
+    max_length = 8
+    current_username = usernm.get()
+    if len(current_username) > max_length:
+        new_username = current_username[:max_length]  # Truncate the username to max_length characters
+        usernm.delete(0, 'end')  # Delete the current contents of the Entry widget
+        usernm.insert(0, new_username)  # Insert the truncated username into the Entry widget
 
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
@@ -224,7 +224,7 @@ user_name = Label(box_2, text='Username:', fg='white', bg='#010F57', font=('Aria
 user_name.place(x=20, y=100)
 usernm = Entry(box_2, textvariable=username, width=30, fg='black', border=1, bg='white', font=('Arial', 10, 'bold'))
 usernm.place(x=20, y=120)
-usernm.config(validate="key", validatecommand=validate_username)  # Configure validatecommand for validation
+username.trace("w", validate_username)
 
 # Email
 email_name = Label(box_2, text='Email:', fg='white', bg='#010F57', font=('Arial', 9, 'bold'))
