@@ -5,6 +5,14 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+import torch
+import sys
+
+import os
+import base64
+from typing import List
+import time
+from google_apis import create_service
 import os, base64, email, spampy, json
 from urlchecker.core.urlproc import UrlCheckResult
 
@@ -27,7 +35,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-import os.path, pyrebase
+import os.path
 
 config = {
 'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
@@ -39,8 +47,9 @@ config = {
 'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
 'measurementId': "G-J1896JVRT9"
 }
-firebase = pyrebase.initialize_app(config)
-database = firebase.database()
+
+# firebase = pyrebase.initialize_app(config)
+# database = firebase.database()
 # import firebase_admin
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
@@ -88,6 +97,8 @@ def googleapi():
     # time.
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    else:
+        creds = None
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -157,10 +168,10 @@ def googleapi():
                 if samplelist[x]["name"] == "Date":
                     date = samplelist[x]["value"]
             totalMessages.append(message)
-            dostable.insert(parent="", index=i, iid=i, text="Row ",
-                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No anomaly was found"))
-            emctable.insert(parent="", index=i, iid=i, text="Row ",
-                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam", "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No anomaly was found"))
+            dostable.insert(parent="", index=len(totalMessages) + 1, iid=len(totalMessages) + 1, text="Row ",
+                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk Spam", "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No anomaly was found"))
+            emctable.insert(parent="", index=len(totalMessages) + 1, iid=len(totalMessages) + 1, text="Row ",
+                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk Spam", "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No anomaly was found"))
         dostable.column("Date", minwidth=100)
         dostable.column("Subject", width=200)
         dostable.column("Source", width=200)
@@ -174,6 +185,8 @@ def googleapi():
 def delete(messageId):
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    else:
+        creds = None
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -223,6 +236,134 @@ def printhi(emails):
     # print(clf.predict(emails))
 
 def gotoscreens():
+    class GmailException(Exception):
+        """gmail base exception class"""
+
+    class NoEmailFound(GmailException):
+        """no email found"""
+
+    def search_emails(query_string: str, label_ids: List = None):
+        try:
+            message_list_response = service.users().messages().list(
+                userId='me',
+                labelIds=label_ids,
+                q=query_string
+            ).execute()
+
+            message_items = message_list_response.get('messages')
+            next_page_token = message_list_response.get('nextPageToken')
+
+            while next_page_token:
+                message_list_response = service.users().messages().list(
+                    userId='me',
+                    labelIds=label_ids,
+                    q=query_string,
+                    pageToken=next_page_token
+                ).execute()
+
+                message_items.extend(message_list_response.get('messages'))
+                next_page_token = message_list_response.get('nextPageToken')
+            return message_items
+        except Exception as e:
+            raise NoEmailFound('No emails returned')
+
+    def get_file_data(message_id, attachment_id, file_name, save_location):
+        response = service.users().messages().attachments().get(
+            userId='me',
+            messageId=message_id,
+            id=attachment_id
+        ).execute()
+
+        file_data = base64.urlsafe_b64decode(response.get('data').encode('UTF-8'))
+        return file_data
+
+    def get_message_detail(message_id, msg_format='metadata', metadata_headers: List = None):
+        message_detail = service.users().messages().get(
+            userId='me',
+            id=message_id,
+            format=msg_format,
+            metadataHeaders=metadata_headers
+        ).execute()
+        return message_detail
+
+    if __name__ == '__main__':
+        CLIENT_FILE = 'credentials.json'
+        API_NAME = 'gmail'
+        API_VERSION = 'v1'
+        SCOPES = ['https://mail.google.com/']
+        if os.path.exists('token.json'):
+            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        else:
+            creds = None
+        # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    'credentials.json', SCOPES)
+                creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open('token.json', 'w') as token:
+                token.write(creds.to_json())
+        service = build('gmail', 'v1', credentials=creds)
+        query_string = 'has:attachment newer_than:1d'
+
+        save_location = os.getcwd()
+        email_messages = search_emails(query_string)
+
+        for email_message in email_messages:
+            messageDetail = get_message_detail(email_message['id'], msg_format='full', metadata_headers=['parts'])
+            messageDetailPayload = messageDetail.get('payload')
+
+            if 'parts' in messageDetailPayload:
+                for msgPayload in messageDetailPayload['parts']:
+                    file_name = msgPayload['filename']
+                    body = msgPayload['body']
+                    if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                        if 'attachmentId' in body:
+
+                            attachment_id = body['attachmentId']
+                            attachment_content = get_file_data(email_message['id'], attachment_id, file_name, save_location)
+
+                            with open(os.path.join(save_location, file_name), 'wb') as _f:
+                                _f.write(attachment_content)
+                                print(f'File \{file_name} is saved at {save_location}')
+                                model = torch.hub.load('ultralytics/yolov5','custom', 'best.pt')
+
+                                # img_data = b'base64 string'
+
+                                # with open("path/to/saved_image.jpg", "wb") as fh:
+                                #     fh.write(base64.decodebytes(img_data))
+
+                                im = file_name
+
+                                result = model(im)
+                                result.print()
+                                resultArray = result.pandas().xyxy[0].value_counts('name')
+                                messageSnippet = messageDetail["snippet"]
+                                message = ""
+                                explanation = ""
+                                if len(resultArray) == 0:
+                                    message = "Possible phishing"
+                                    explanation = "Logo is not in the dataset of legit companies"
+                                else:
+                                    if result.pandas().xyxy[0].value_counts('name').axes[0][0].lower() in messageSnippet.lower():
+                                        message = "Not phishing"
+                                        explanation = f"Company logo({result.pandas().xyxy[0].value_counts('name').axes[0][0]}) found in the email message"
+                                    else:
+                                        message = "Possible Phishing"
+                                        explanation = "Company logo not found in the email message"
+
+                                totalMessages.append(messageDetail)
+                                # urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
+                                #                 values=(emailString, personalMessages[i]["snippet"], messageforurl,
+                                #                         explanationforurl))
+                                emctable.insert(parent="", index=len(totalMessages) + 1,
+                                                iid=len(totalMessages) + 1, text="",
+                                                values=(file_name, messageSnippet, message,
+                                                        explanation))
+            time.sleep(0.5)
     googleapi()
     phishing()
 
@@ -344,7 +485,7 @@ table.column("Source", width=200)
 table.column("Response", width=400)
 table.place(x=10, y=10)
 table.column("Date", minwidth=100)
-table.column("Subject", width=377)
+# table.column("Subject", width=377)
 table.column("Response", width=100)
 table.place(y=79)
 
@@ -378,19 +519,19 @@ def save_to_history(dostable):
         })
 
     # Save the result data to the database
-    database.child('Results').push(result_data)
+    # database.child('Results').push(result_data)
 
     # Update the history table with the saved data
-    update_history_table(result_data)
+    # update_history_table(result_data)
 
 # Function to retrieve result data from the database
-def retrieve_result_data():
-    result_data = []
-    results = database.child("Results").get()
-    if results is not None:  # Check if results exist
-        for result in results.each():
-            result_data.append(result.val())
-    return result_data
+# def retrieve_result_data():
+#     result_data = []
+#     results = database.child("Results").get()
+#     if results is not None:  # Check if results exist
+#         for result in results.each():
+#             result_data.append(result.val())
+#     return result_data
 
 # Function to update the chart with percentages of flagged and not flagged emails
 def update_chart(dostable):
@@ -512,13 +653,13 @@ def phishing():
                 domainString = fromStringValue[indexOfAtSign + 1:len(fromStringValue) - 1]
                 emailString = fromStringValue
                 if domainString == 'gmail.com':
-                    messageforurl = ("Low Risk for Phishing")
+                    messageforurl = ("Low Risk Phishing")
                     explanationforurl = "The user is using his/her personal email. Legitimate institutions usually use their company email."
                 else:
                     indexOfLessThan = fromStringValue.find('<')
                     if indexOfLessThan == -1:
                         emailString = fromStringValue
-                        messageforurl = "No Risk for Phishing"
+                        messageforurl = "No Risk Phishing"
                         explanationforurl = "The user is using a legitimate email associated with their institution."
                     else:
                         emailString = fromStringValue[indexOfLessThan + 1:len(fromStringValue) - 1]
@@ -538,7 +679,7 @@ def phishing():
                 totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
-                emctable.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
+                emctable.insert(parent="", index= len(totalMessages) + 1, iid=len(totalMessages) + 1, text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
     urltable.column("Email", minwidth=100)
     urltable.column("Subject", width=200)
