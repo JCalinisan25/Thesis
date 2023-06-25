@@ -71,8 +71,8 @@ def validate_inputs():
         messagebox.showerror("Error", "Invalid Email Address Format!\n(Example: Abcd@email.com)")
     elif usernm.get() == '':
         messagebox.showerror("Error", "Please provide a username!")
-    elif len(username) < 6 or len(username) > 8:  # Check the length of the username
-        messagebox.showerror('Error', 'Username should be 6-8 letters only!')
+    elif len(usernm.get()) < 3:  # Check the length of the username
+        messagebox.showerror('Error', 'Username should be 3-8 letters only!')
     elif password == '':
         messagebox.showerror("Error", "Please provide a password!")
     elif not re.match(r"^(?=.*\d)(?=.*[A-Z])(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", password):
@@ -105,7 +105,7 @@ def validate_inputs():
             "username": usernm.get(),
             "email": email_value
         }
-        messagebox.showinfo('Success','Register Successfully')
+        messagebox.showinfo('Success','Registration Successfully.')
         database.child("Users").push(data)
         regist.destroy()
         os.system('verified.py')
@@ -281,6 +281,9 @@ reg.place(x=20, y=305)
 log = Button(box_2, width=10, pady=5, text="Login", bg='white', cursor='hand2', font=('Arial', 12, 'bold'),
              command=to_sign)
 log.place(x=150, y=305)
+
+# Bind Enter key press event to Register button's command
+regist.bind('<Return>', lambda event: reg.invoke())
 
 
 # Terms and Conditions/DPA Acceptance

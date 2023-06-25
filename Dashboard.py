@@ -17,7 +17,21 @@ config = {
 firebase = pyrebase.initialize_app(config)
 database = firebase.database()
 auth = firebase.auth()
+json_file_path = "token.json"
 
+
+def tosign():
+    msg = messagebox.askyesno('Logout','Are you sure you want to logout?')
+    if msg:
+        with open('user.json', 'w') as file:
+            json.dump({}, file)
+            dash.destroy()
+            os.system('Login.py')
+    if os.path.exists(json_file_path):
+        os.remove(json_file_path)
+        dash.destroy()
+        os.system('Login.py')
+    
 # window
 dash = Tk()
 dash.title("E.P.B.I.P")
@@ -39,16 +53,6 @@ def center_window(window):
 # Center the tkinter window
 center_window(dash)
 
-def tosign():
-    msg = messagebox.askyesno('Logout','Are you sure you want to logout?')
-    if msg:
-        dash.destroy()
-        os.system('Login.py')
-
-def toresult():
-    dash.destroy()
-    os.system('Results.py')
-
 def toscan():
     dash.destroy()
     os.system('scan.py')
@@ -64,7 +68,7 @@ def home():
     box_2.place(x=20, y=20)
 
     brgr_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu,
-                      activebackground='#010F57')
+                    activebackground='#010F57')
     brgr_btn.place(x=10, y=5)
 
     lbl2 = Label(box_2, bg='#010F57',image=logo_pk)
@@ -73,7 +77,8 @@ def home():
     username = Label(box_2, text=username_label_text, fg='white', bg='#010F57', font=('Arial', 25, 'bold'))
     username.place(x=100, y=120)
 
-    lg_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=lg_pk, cursor='hand2', command=tosign)
+    lg_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=lg_pk, cursor='hand2', command=tosign,
+                    activebackground="#010F57")
     lg_btn.place(x=370, y=5)
 
     sc_btn = Button(box_2, image=scan_btn, width=300, height=90, bg="#021976", bd=0, cursor='hand2', command=toscan)
@@ -122,15 +127,15 @@ def toggle_menu():
             myButton1['foreground']= 'white'
 
         myButton1 = Button(f1,text=text,
-                       width=20,
-                       height=2,
-                       fg='white',
-                       border=0,
-                       bg=fcolor,
-                       activeforeground='white',
-                       activebackground=bcolor,
-                       font=('Arial', 9, 'bold'),           
-                        command=cmd)
+                    width=20,
+                    height=2,
+                    fg='white',
+                    border=0,
+                    bg=fcolor,
+                    activeforeground='white',
+                    activebackground=bcolor,
+                    font=('Arial', 9, 'bold'),           
+                    command=cmd)
                       
         myButton1.bind("<Enter>", on_entera)
         myButton1.bind("<Leave>", on_leavea)
@@ -148,6 +153,15 @@ def toggle_menu():
     close = Button(f1, bg="#021976", bd=0, height=1, width=1, text="X", fg='white', font=('Arial', 15, 'bold'),
                 cursor='hand2', command=dele, activebackground='#010F57', activeforeground='white')
     close.place(x=5, y=1)
+
+def toresult():
+    # Check if the sc_btn is clicked
+    if os.path.exists(json_file_path):
+        dash.destroy()
+        os.system('Results.py')
+            
+    else:
+        messagebox.showinfo("No Scan", "No data found.Please scan your email first.")
 
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
@@ -173,7 +187,7 @@ brgr_pk = ImageTk.PhotoImage(brgr.resize((35, 35)))
 lbl3 = Label( image=brgr_pk)
 
 brgr_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu,
-                  activebackground='#010F57')
+                activebackground='#010F57')
 brgr_btn.place(x=10, y=5)
 
 # Get the email from the login process
@@ -182,8 +196,8 @@ try:
         user_info = json.load(file)
         email = user_info['email']
 except FileNotFoundError:
-    messagebox.showerror("Error", "No user is signed in!")
-    email = ""
+        messagebox.showerror("Error", "No user is signed in!")
+        email = ""
 
 # Retrieve username from Firebase Realtime Database based on the email
 users = database.child("Users").get()
@@ -193,9 +207,13 @@ for user in users.each():
         username = user.val()['username']
         break
 
-username_label_text = f"Hi!, {username}"
+username_label_text = f"Hi, {username}"
+username_length = len(username)
+
+x_pos = (415 - (30 * username_length)) // 2
+
 user = Label(box_2, text=username_label_text, fg='white', bg='#010F57', font=('Arial', 25, 'bold'))
-user.place(x=100, y=120)
+user.place(x=x_pos, y=120)
 
 # logout
 log = Image.open("img\\logout.JPG")
@@ -204,7 +222,7 @@ lg_pk = ImageTk.PhotoImage(log.resize((30, 25)))
 lbl4 = Label( image=lg_pk)
 
 lg_btn = Button(box_2, bg="#010F57", bd=0, height=40, width=30, image=lg_pk, cursor='hand2', command=tosign,
-                activebackground='#010F57')
+                    activebackground='#010F57')
 lg_btn.place(x=370, y=5)
 
 # To scan

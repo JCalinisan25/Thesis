@@ -6,14 +6,13 @@ from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import torch
-import sys
+import seaborn as sns
 
 import os
 import base64
 from typing import List
 import time
 from google_apis import create_service
-import os, base64, email, spampy, json
 import os, base64, email, spampy, json, requests
 from urlchecker.core.urlproc import UrlCheckResult
 
@@ -122,7 +121,8 @@ def googleapi():
     try:
         # Call the Gmail API
         service = build('gmail', 'v1', credentials=creds)
-        results = service.users().messages().list(userId='me',labelIds=['CATEGORY_PERSONAL'], maxResults=5, q='newer_than:1d').execute()
+        results = service.users().messages().list(userId='me', maxResults=50, q='newer_than:1d').execute()
+        #,labelIds=['CATEGORY_PERSONAL']
         # labels = results.get('labels', [])
         # print(results)
         # print(get_messages(service, "me"))
@@ -143,10 +143,10 @@ def googleapi():
 
         # Configuring treeview
         dostable.configure(xscrollcommand=dostablehorscrlbar.set, yscrollcommand=dostableverscrlbar.set)
-        dostable.heading("Date", text="Date")
-        dostable.heading("Subject", text="Subject")
-        dostable.heading("Analysis", text="Analysis")
-        dostable.heading("Response", text="Response")
+        dostable.heading("Date", text="Date", anchor="center")
+        dostable.heading("Subject", text="Subject", anchor="center")
+        dostable.heading("Analysis", text="Analysis", anchor="center")
+        dostable.heading("Response", text="Response", anchor="center")
         subjectsToPredict = []
         for i in range(len(messages)):
             subjectsToPredict.append(messages[i]["snippet"])
@@ -165,32 +165,28 @@ def googleapi():
                     date = samplelist[x]["value"]
             totalMessages.append(message)
             dostable.insert(parent="", index=i, iid=i, text="Row ",
-                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam",
+                            values=(date, message["snippet"], "Medium Risk for Spam" if emailPredictions[i] == 1 else "No Risk for Spam",
                                     "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
 
             emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text="Row ",
-                            values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam",
+                            values=(date, message["snippet"], "Medium Risk for Spam" if emailPredictions[i] == 1 else "No Risk for Spam",
                                     "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
             #hist_table.insert(parent="", index=i, iid=i, text="Row ",
                             #values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam",
                                     #"The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
-        dostable.column("Date", width=180)
-        dostable.column("Subject", width=565)
-        dostable.column("Analysis", width=130)
-        dostable.column("Response", width=330)
-        dostable.place(x=0, y=99, width=900, height=250)  # Adjust these values as needed
-        dostableverscrlbar.place(x=877, y=0, width=20, height=465)  # Adjust these values as needed
-        dostablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
-        update_chart_spam(dostable)
 
-        #save_to_history(dostable)
+        dostable.column("Date", width=180, anchor="w")
+        dostable.column("Subject", width=565, anchor="w")
+        dostable.column("Analysis", width=130, anchor="w")
+        dostable.column("Response", width=330, anchor="w")
+        dostable.place(x=0, y=1, width=1513, height=752)  # Adjust these values as needed
+        dostableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
+        #dostablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
         print(f'An error occurred: {error}')
 
-
-    
-    
 
 def delete(messageId):
     if os.path.exists('token.json'):
@@ -323,15 +319,25 @@ def gotoscreens():
         save_location = os.getcwd()
         email_messages = search_emails(query_string)
 
-        logotable.pack(side='left')
-        logoverscrlbar = ttk.Scrollbar(dos,
-                                      orient="vertical",
-                                      command=logotable.yview)
-        logoverscrlbar.pack(side='left', fill='y')
-        logotable.configure(yscrollcommand=logoverscrlbar.set)
-        logotable.heading("Logo", text="Logo")
-        logotable.heading("Subject", text="Subject")
-        logotable.heading("Analysis", text="Analysis")
+        # Constructing vertical scrollbar with treeview
+        logtableverscrlbar = ttk.Scrollbar(logo, orient="vertical", command=logotable.yview)
+
+        # Constructing horizontal scrollbar with treeview
+        logtablehorscrlbar = ttk.Scrollbar(logo, orient="horizontal", command=logotable.xview)
+
+        # Configuring treeview
+        logotable.configure(xscrollcommand=logtablehorscrlbar.set, yscrollcommand=logtableverscrlbar.set)
+        logotable.heading("Logo", text="Logo", anchor="center")
+        logotable.heading("Subject", text="Subject", anchor="center")
+        logotable.heading("Analysis", text="Analysis", anchor="center")
+        logotable.heading("Response", text="Response", anchor="center")
+        logotable.column("Logo", width=180, anchor="w")
+        logotable.column("Subject", width=565, anchor="w")
+        logotable.column("Analysis", width=130, anchor="w")
+        logotable.column("Response", width=300, anchor="w")
+        logotable.place(x=0, y=1, width=1513, height=752)  # Adjust these values as needed
+        logtableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
+        #logtablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
         if email_messages is not None:
             for email_message in email_messages:
                 messageDetail = get_message_detail(email_message['id'], msg_format='full', metadata_headers=['parts'])
@@ -388,6 +394,7 @@ def gotoscreens():
                                                     iid=len(totalMessages), text="",
                                                     values=(file_name, messageSnippet, message,
                                                             explanation))
+
                 time.sleep(0.5)
     googleapi()
     phishing()
@@ -395,23 +402,9 @@ def gotoscreens():
 # window
 result = Tk()
 result.title("E.P.B.I.P")
-result.geometry("900x550")
 result.resizable(False, False)
+result.state('zoomed')
 result.iconbitmap(r'img\\logo.ico')
-
-# Set the position of the terminal window
-def center_window(window):
-    window.update_idletasks()
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
-    window_width = window.winfo_width()
-    window_height = window.winfo_height()
-    x = (screen_width - window_width) // 2
-    y = (screen_height - window_height) // 3
-    window.geometry(f"{window_width}x{window_height}+{x}+{y}")
-
-# Center the tkinter window
-center_window(result)
 
 
 def dash():
@@ -425,13 +418,13 @@ def update_heading(event):
 
 # Background
 bg_0 = Image.open("img\\bg8.jpg")
-bck_pk = ImageTk.PhotoImage(bg_0.resize((900, 550)))
+bck_pk = ImageTk.PhotoImage(bg_0.resize((1535, 840)))
 
 lbl = Label(result, image=bck_pk, border=0)
 lbl.place(x=1, y=1)
 
 # Header
-box_1 = Frame(result, width=900, height=55, bg='#010F57')
+box_1 = Frame(result, width=1535, height=55, bg='#010F57')
 box_1.place(x=3, y=5)
 heading = Label(result, text='Detailed Report', fg='white', bg='#010F57', font=('Arial', 30, 'bold'))
 heading.place(x=10, y=5)
@@ -441,8 +434,12 @@ def update_tab_title(event):
     selected_tab = notebook.tab(notebook.select(), "text")
     result.title(f"Detailed Report - {selected_tab}")
 
+# Create a custom style for the notebook
+style = ttk.Style()
+style.configure("Bold.TNotebook.Tab", font=('Arial', 12, 'bold'))
+
 # widget that manages a collection of windows/displays
-notebook = ttk.Notebook(result, height=465, width = 895)
+notebook = ttk.Notebook(result, height=755, width = 1533, style="Bold.TNotebook")
 notebook.place(x=1,y=60)
 
 # Bind the event to update the tab title
@@ -457,15 +454,12 @@ url = Frame(notebook)
 hist = Frame(notebook)
 chart = Frame(notebook)
 
-notebook.add(em_c, text="Summary\t     ")
-notebook.add(dos, text="Subject\t          ")
-notebook.add(url, text="URL/s\t    ")
-notebook.add(logo, text="Logo\t    ")
-notebook.add(hist, text="History\t    ")
-notebook.add(chart, text="Chart\t    ")
-
-# Set the initial window title
-result.title("Detailed Report - Summary")
+notebook.add(em_c, text="Summary\t\t\t     ")
+notebook.add(dos, text="Subject\t\t\t      ")
+notebook.add(url, text="URL/s\t\t\t    ")
+notebook.add(logo, text="Logo\t\t\t    ")
+notebook.add(hist, text="History\t\t\t    ")
+notebook.add(chart, text="Chart\t\t\t ")
 
 # Bind the tab change event to the update_heading function
 notebook.bind("<<NotebookTabChanged>>", update_heading)
@@ -473,8 +467,9 @@ notebook.bind("<<NotebookTabChanged>>", update_heading)
 # Domain Tab
 dos.configure(background='#010F57')
 dosbg = ttk.Style
-dostable = ttk.Treeview(dos, columns=("Date", "Subject", "Analysis"), show="headings")
-logotable = ttk.Treeview(logo, columns=("Logo", "Subject", "Analysis"), show="headings")
+dostable = ttk.Treeview(dos, columns=("Date", "Subject", "Analysis", "Response"), show="headings")
+logotable = ttk.Treeview(logo, columns=("Logo", "Subject", "Analysis", "Response"), show="headings")
+urltable = ttk.Treeview(url, columns=("Email", "Subject", "Source", "Response"), show="headings")
 # Label(dos, text="The domain '@d1scord.com' has been found to be fraudulent. "
 #                 "\nIt appears to be mimicking 'discord.com'.", fg='white', width=75, height=50,
 #       bg='#010F57', bd=0, font=('Arial', 9, 'bold')).pack()
@@ -492,8 +487,6 @@ logo.configure(background='#010F57')
 # URL Tab
 url.configure(background='#010F57')
 
-
-# Function to save email data to the database
 # Function to update the history table with result data
 def update_history_table(data):
     hist_table.delete(*hist_table.get_children())  # Clear existing table entries
@@ -501,67 +494,81 @@ def update_history_table(data):
     for i, entry in enumerate(data):
         date = entry['date']
         subject = entry['subject']
-        analysis = entry['analysis']
-
-
+        analysis= entry['analysis']
+        response = entry['response']
+        
         hist_table.insert(parent="", index=i, iid=i, text="Row ",
-                          values=(date, subject, analysis))
+                     values=(date, subject, analysis, response))
 
-# Function to retrieve result data from dostable and urltable and save it to the history tab
-def save_to_history( urltable):
-    dos_items = dostable.get_children()  # Get all items in dostable
-    url_items = urltable.get_children()  # Get all items in urltable
+# Read user's email from user.json
+with open('user.json', 'r') as file:
+    user_info = json.load(file)
+    email = user_info['email']
     
+def save_to_database(dostable, urltable, logotable):
     result_data = []
 
+    # Process dos table data
+    dos_items = dostable.get_children()
     for item in dos_items:
         values = dostable.item(item)['values']
         date = values[0]
         subject = values[1]
         analysis = values[2]
+        response = values[3]
 
-        
         result_data.append({
             'date': date,
             'subject': subject,
             'analysis': analysis,
-
+            'response': response
         })
 
+    # Process url table data
+    url_items = urltable.get_children()
     for item in url_items:
         values = urltable.item(item)['values']
         date = values[0]
         subject = values[1]
         analysis = values[2]
-
+        response = values[3]
 
         result_data.append({
             'date': date,
             'subject': subject,
             'analysis': analysis,
-
+            'response': response
         })
 
-    # Save the result data to the database
-    database.child('Results').push(result_data)
+    # Process logo table data
+    logo_items = logotable.get_children()
+    for item in logo_items:
+        values = logotable.item(item)['values']
+        date = values[0]
+        subject = values[1]
+        analysis = values[2]
+        response = values[3]
+
+        result_data.append({
+            'date': date,
+            'subject': subject,
+            'analysis': analysis,
+            'response': response
+        })
+
+   # Save the result data to the database with a single push ID
+    #database.child('Results').child(email.replace('.', '_')).push(result_data)
+
     
     # Update the history table with the saved data
     update_history_table(result_data)
 
-# Function to retrieve result data from the database
-def retrieve_result_data():
-    result_data = []
-    results = database.child("Results").get()
-    if results is not None:  # Check if results exist
-        for result in results.each():
-            result_data.append(result.val())
-    return result_data
 
 
 # History Tab
 hist.configure(background='#010F57')
 bg = ttk.Style
-hist_table = ttk.Treeview(hist, columns=("Date", "Subject", "Analysis", "Response"), show="headings")
+hist_table = ttk.Treeview(hist, columns=("Details", "Subject", "Analysis", "Response"), show="headings")
 # table.pack()
 
 # Constructing vertical scrollbar with treeview
@@ -572,73 +579,123 @@ histtablehorscrlbar = ttk.Scrollbar(hist, orient="horizontal", command=hist_tabl
 
 # Configuring treeview
 hist_table.configure(xscrollcommand=histtablehorscrlbar.set, yscrollcommand=histtableverscrlbar.set)
-hist_table.heading("Date", text="Details")
-hist_table.heading("Subject", text="Subject")
-hist_table.heading("Analysis", text="Analysis")
-hist_table.heading("Response", text="Response")
-hist_table.column("Date", minwidth=240)
-hist_table.column("Subject", width=510)
-hist_table.column("Analysis", width=130)
-hist_table.column("Response", width=400)
+hist_table.heading("Details", text="Details", anchor="center")
+hist_table.heading("Subject", text="Subject", anchor="center")
+hist_table.heading("Analysis", text="Analysis", anchor="center")
+hist_table.heading("Response", text="Response", anchor="center")
+hist_table.column("Details", minwidth=240, anchor="w")
+hist_table.column("Subject", width=510, anchor="w")
+hist_table.column("Analysis", width=130, anchor="w")
+hist_table.column("Response", width=400, anchor="w")
 
 # Place treeview and scrollbars
-hist_table.place(x=0, y=99, width=900, height=250)  # Adjust these values as needed
-histtableverscrlbar.place(x=877, y=0, width=20, height=465)  # Adjust these values as needed
-histtablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+hist_table.place(x=0, y=1, width=1513, height=752)  # Adjust these values as needed
+histtableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
+#histtablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
 
+def update_chart(urltable, dostable, logotable):
+    items_phish = urltable.get_children()  # Get all items in urltable
+    total_phish = len(items_phish)
+    flagged_phish = 0
 
-# Function to update the chart with percentages of flagged and not flagged emails
-def update_chart_spam(dostable):
-    items = dostable.get_children()  # Get all items in dostable
-    total_emails = len(items)
-    flagged_emails = 0
+    items_spam = dostable.get_children()  # Get all items in dostable
+    total_spam = len(items_spam)
+    flagged_spam = 0
 
-    for item in items:
-        response = dostable.item(item)['values'][2]
-        if response == "Medium Risk":
-            flagged_emails += 1
+    items_logo = logotable.get_children() # Get all items in logotable
+    total_logo = len(items_logo)
+    flagged_logo = 0
 
-    not_flagged_emails = total_emails - flagged_emails
-    percentages = {
-        "Spam": flagged_emails / total_emails * 100,
-        "Normal": not_flagged_emails / total_emails * 100
-    }
-
-    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNormal Emails: {not_flagged_emails}"
-
-    ax2.clear()  # Clear the existing chart
-    ax2.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
-    ax2.set_title("Spam Emails")
-    ax2.text(0.1, 0.01, statistics, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
-    canvas.draw()
-
-
-
-#Function to update the chart with percentages of flagged and not flagged emails
-def update_chart_phish(urltable):
-    items = urltable.get_children()  # Get all items in dostable
-    total_emails = len(items)
-    flagged_emails = 0
-
-    for item in items:
+    for item in items_phish:
         analysis = urltable.item(item)['values'][2]
-        if analysis == "Low Risk for Phishing" or analysis == "The sender's email is disposable":
-            flagged_emails += 1
+        if analysis == "Medium Risk for Phishing" or analysis == "High Risk for Phishing":
+            flagged_phish += 1
 
-    not_flagged_emails = total_emails - flagged_emails
+    for item in items_spam:
+        analysis = dostable.item(item)['values'][2]
+        if analysis == "Medium Risk for Spam":
+            flagged_spam += 1
+
+    for item in items_logo:
+        analysis = logotable.item(item)['values'][2]
+        if analysis == "Possible Phishing":
+            flagged_logo += 1
+
+    not_flagged_phish = total_phish - flagged_phish
+    not_flagged_spam = total_spam - flagged_spam
+    not_flagged_logo = total_logo - flagged_logo
+    flagged_emails = flagged_phish + not_flagged_logo + flagged_spam
+    normal_emails = not_flagged_phish + not_flagged_spam + flagged_logo
+    total_emails = total_spam + total_phish + total_logo
     percentages = {
-        "Phishing": flagged_emails / total_emails * 100,
-        "Normal": not_flagged_emails / total_emails * 100
+        "Phishing": (flagged_phish + not_flagged_logo) / total_emails * 100,
+        "Spam": flagged_spam / total_emails * 100,
+        "Normal": (not_flagged_phish + not_flagged_spam + flagged_logo) / total_emails * 100
     }
 
-    statistics = f"Total Emails: {total_emails}\nFlagged Emails: {flagged_emails}\nNormal Emails: {not_flagged_emails}"
+    # Create a new figure with two subplots
+    fig = Figure(figsize=(12, 4), dpi=100)
+    ax1 = fig.add_subplot(121)  # Bar chart
+    ax2 = fig.add_subplot(122)  # Existing chart
 
-    ax1.clear()  # Clear the existing chart
-    ax1.pie(percentages.values(), labels=percentages.keys(), shadow=True, explode=(0.1, 0.1), autopct='%1.1f%%', startangle=90)
-    ax1.set_title("Phishing Emails")
-    ax1.text(0.1, 0.01, statistics, horizontalalignment='center', verticalalignment='center', transform=ax1.transAxes)
+    # Define a visually appealing color palette
+    colors = sns.color_palette("Set2")
+
+    # Bar chart
+    categories = percentages.keys()
+    values = percentages.values()
+    x_pos = np.arange(len(categories))
+    ax1.bar(x_pos, values, align='center', alpha=0.8, color=colors)
+    ax1.set_xticks(x_pos)
+    ax1.set_xticklabels(categories)
+    ax1.set_ylabel('Percentage')
+    ax1.spines['top'].set_visible(False)  # Hide the top spine
+    ax1.spines['right'].set_visible(False)  # Hide the right spine
+    ax1.grid(axis='y', linestyle='--', alpha=0.5)  # Add dashed gridlines
+
+    # Existing chart
+    existing_labels = [''] * len(percentages)  # Add percentage labels
+    ax2.pie(percentages.values(), labels=existing_labels, colors=colors, shadow=True, explode=(0.1, 0.1, 0.1), autopct='%1.1f%%', startangle=90)
+    ax2.set_title("")
+    ax2.axis('equal')  # Ensure pie is drawn as a circle
+
+    # Set a common label for both charts
+    fig.text(0.5, 0.94, 'Email Categories', ha='center', fontsize=14, weight='bold')
+
+    canvas = FigureCanvasTkAgg(fig, master=chart)
+    canvas.get_tk_widget().pack(pady=10, padx=20)
+
     canvas.draw()
 
+    f1 = Frame(chart, width=300, height=300, bg='#85CEB7')
+    f1.place(x=165, y=435)
+
+    # Create a label to display the flagged emails count
+    flagged_emails_label = Label(f1, text=f"Flagged Emails(Phishing&Spam):", font=("Arial", 12, "bold"), bg='#85CEB7', fg = 'white')
+    flagged_emails_label.place(y=5)
+
+    femails_label = Label(f1, text=f"{flagged_emails}", font=("Arial", 25, "bold"), bg='#85CEB7', fg = 'white')
+    femails_label.place(relx=0.5, rely=0.5, anchor='center')
+
+    f2 = Frame(chart, width=300, height=300, bg='#FBA481')
+    f2.place(x=620, y=435)
+
+    # Create a label to display the normal emails count
+    normal_emails_label = Label(f2, text="Normal Emails:", font=("Arial", 12, "bold"), bg='#FBA481', fg = 'white')
+    normal_emails_label.place(y=5)
+
+    nemails_label = Label(f2, text=f"{normal_emails}", font=("Arial", 25, "bold"), bg='#FBA481', fg = 'white')
+    nemails_label.place(relx=0.5, rely=0.5, anchor='center')
+
+    f3 = Frame(chart, width=300, height=300, bg='#A4B2D3')
+    f3.place(x=1065, y=435)
+
+    # Create a label to display the Total emails count
+    total_emails_label = Label(f3, text="Total Emails:", font=("Arial", 12, "bold"), bg='#A4B2D3', fg = 'white')
+    total_emails_label.place(y=5)
+
+    tmails_label = Label(f3, text=f"{total_emails}", font=("Arial", 25, "bold"), bg='#A4B2D3', fg = 'white')
+    tmails_label.place(relx=0.5, rely=0.5, anchor='center')
 
 emcbg = ttk.Style
 emctable = ttk.Treeview(em_c, columns=("Date", "Subject", "Analysis", "Response"), show="headings")
@@ -653,36 +710,22 @@ emctablehorscrlbar = ttk.Scrollbar(em_c, orient="horizontal", command=emctable.x
 # Configuring treeview
 emctable.configure(xscrollcommand=emctablehorscrlbar.set, yscrollcommand=emctableverscrlbar.set)
 
-emctable.heading("Date", text="Details")
-emctable.heading("Subject", text="Subject")
-emctable.heading("Analysis", text="Analysis")
-emctable.heading("Response", text="Response")
-emctable.column("Date", minwidth=240)
-emctable.column("Subject", width=510)
-emctable.column("Analysis", width=130)
-emctable.column("Response", width=450)
+emctable.heading("Date", text="Details", anchor="center")
+emctable.heading("Subject", text="Subject", anchor="center")
+emctable.heading("Analysis", text="Analysis", anchor="center")
+emctable.heading("Response", text="Response", anchor="center")
+emctable.column("Date", minwidth=240, anchor="w")
+emctable.column("Subject", width=710, anchor="w")
+emctable.column("Analysis", width=130, anchor="w")
+emctable.column("Response", width=450, anchor="w")
 
 # Place treeview and scrollbars
-emctable.place(x=0, y=99, width=900, height=250)  # Adjust these values as needed
-emctableverscrlbar.place(x=877, y=0, width=20, height=465)  # Adjust these values as needed
-emctablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+emctable.place(x=0, y=1, width=1513, height=752)  # Adjust these values as needed
+emctableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
+#emctablehorscrlbar.place(x=0, y=735, width=1513, height=20)  # Adjust these values as needed
 
-
-# Chart Tab
-chart.configure(background='#010F57')
-empty_frame = ttk.Frame(chart, height=100)
-fig1 = Figure(figsize=(4.2, 4), dpi=100)
-ax1 = fig1.add_subplot(111)
-canvas = FigureCanvasTkAgg(fig1, master=chart)
-canvas.get_tk_widget().pack(side=LEFT,pady=10, padx=20)
-
-fig2 = Figure(figsize=(3.9, 4), dpi=100)
-ax2 = fig2.add_subplot(111)
-canvas = FigureCanvasTkAgg(fig2, master=chart)
-canvas.get_tk_widget().pack(side=RIGHT,pady=10, padx=20)
 
 urlbg = ttk.Style
-urltable = ttk.Treeview(url, columns=("Email", "Subject", "Source", "Response"), show="headings")
 personalMessages = []
 
 
@@ -702,10 +745,10 @@ def phishing():
 
     # Configuring treeview
     urltable.configure(xscrollcommand=urltablehorscrlbar.set, yscrollcommand=urltableverscrlbar.set)
-    urltable.heading("Email", text="Email")
-    urltable.heading("Subject", text="Subject")
-    urltable.heading("Source", text="Analysis")
-    urltable.heading("Response", text="Response")
+    urltable.heading("Email", text="Email", anchor="center")
+    urltable.heading("Subject", text="Subject", anchor="center")
+    urltable.heading("Source", text="Analysis", anchor="center")
+    urltable.heading("Response", text="Response", anchor="center")
     #data
     # messageforurl = []
     for i in range(len(messages)):
@@ -750,30 +793,31 @@ def phishing():
                         # uncomment
                 #         response = requests.get(urlString, headers=headers, params=querystring)
                 #         if response.json()["disposable"] == True:
-                #             messageforurl = "The sender's email is disposable"
+                #             messageforurl = "High Risk for Phishing"
+                #             explanationforurl = "The sender's email is disposable"
                 #         else:
                 #             messageforurl = "The sender's email looks legitimate."
                 totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
-                                values=(emailString, personalMessages[i]["snippet"], messageforurl))
+                                values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
                 emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
                 #hist_table.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
                                 #values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
     
-                urltable.column("Email", minwidth=240)
-                urltable.column("Subject", width=515)
-                urltable.column("Source", width=120)
-                urltable.column("Response", width=450)
+                urltable.column("Email", minwidth=240, anchor="w")
+                urltable.column("Subject", width=515, anchor="w")
+                urltable.column("Source", width=120, anchor="w")
+                urltable.column("Response", width=450, anchor="w")
                 urltable.bind('<Button-1>', selectItem)
-                update_chart_phish(urltable)
-                save_to_history(urltable)
 
 
     # Place treeview and scrollbars
-    urltable.place(x=0, y=99, width=900, height=250)  # Adjust these values as needed
-    urltableverscrlbar.place(x=877, y=0, width=20, height=465)  # Adjust these values as needed
-    urltablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+    urltable.place(x=0, y=1, width=1513, height=752)  # Adjust these values as needed
+    urltableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
+    #urltablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+    update_chart(urltable, dostable, logotable)
+    save_to_database(dostable, logotable, urltable)
 
 def callback():
     indexSelected = notebook.index(notebook.select())
@@ -792,10 +836,10 @@ def todash():
     os.system("Dashboard.py")
 
 spamButton = Button(result, text="Move to trash", command=callback)
-spamButton.place(x=350, y=15)
+spamButton.place(x=1000, y=15)
 
 bck_btn = Button(result, text="Return to dashboard", command=todash)
-bck_btn.place(x=770, y=15)
+bck_btn.place(x=1400, y=15)
 
 # Exit Button
 result.after(0, gotoscreens)
