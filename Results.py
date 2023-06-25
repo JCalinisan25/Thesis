@@ -121,7 +121,7 @@ def googleapi():
     try:
         # Call the Gmail API
         service = build('gmail', 'v1', credentials=creds)
-        results = service.users().messages().list(userId='me', maxResults=5, q='newer_than:1d').execute()
+        results = service.users().messages().list(userId='me', maxResults=50, q='newer_than:1d').execute()
         #,labelIds=['CATEGORY_PERSONAL']
         # labels = results.get('labels', [])
         # print(results)
@@ -624,6 +624,7 @@ def update_chart(urltable, dostable, logotable):
     not_flagged_phish = total_phish - flagged_phish
     not_flagged_spam = total_spam - flagged_spam
     not_flagged_logo = total_logo - flagged_logo
+    flagged_emails = flagged_phish + not_flagged_logo + flagged_spam
     normal_emails = not_flagged_phish + not_flagged_spam + flagged_logo
     total_emails = total_spam + total_phish + total_logo
     percentages = {
@@ -633,7 +634,7 @@ def update_chart(urltable, dostable, logotable):
     }
 
     # Create a new figure with two subplots
-    fig = Figure(figsize=(12, 5), dpi=100)
+    fig = Figure(figsize=(12, 4), dpi=100)
     ax1 = fig.add_subplot(121)  # Bar chart
     ax2 = fig.add_subplot(122)  # Existing chart
 
@@ -665,6 +666,36 @@ def update_chart(urltable, dostable, logotable):
     canvas.get_tk_widget().pack(pady=10, padx=20)
 
     canvas.draw()
+
+    f1 = Frame(chart, width=300, height=300, bg='#85CEB7')
+    f1.place(x=165, y=435)
+
+    # Create a label to display the flagged emails count
+    flagged_emails_label = Label(f1, text=f"Flagged Emails(Phishing&Spam):", font=("Arial", 12, "bold"), bg='#85CEB7', fg = 'white')
+    flagged_emails_label.place(y=5)
+
+    femails_label = Label(f1, text=f"{flagged_emails}", font=("Arial", 25, "bold"), bg='#85CEB7', fg = 'white')
+    femails_label.place(relx=0.5, rely=0.5, anchor='center')
+
+    f2 = Frame(chart, width=300, height=300, bg='#FBA481')
+    f2.place(x=620, y=435)
+
+    # Create a label to display the normal emails count
+    normal_emails_label = Label(f2, text="Normal Emails:", font=("Arial", 12, "bold"), bg='#FBA481', fg = 'white')
+    normal_emails_label.place(y=5)
+
+    nemails_label = Label(f2, text=f"{normal_emails}", font=("Arial", 25, "bold"), bg='#FBA481', fg = 'white')
+    nemails_label.place(relx=0.5, rely=0.5, anchor='center')
+
+    f3 = Frame(chart, width=300, height=300, bg='#A4B2D3')
+    f3.place(x=1065, y=435)
+
+    # Create a label to display the Total emails count
+    total_emails_label = Label(f3, text="Total Emails:", font=("Arial", 12, "bold"), bg='#A4B2D3', fg = 'white')
+    total_emails_label.place(y=5)
+
+    tmails_label = Label(f3, text=f"{total_emails}", font=("Arial", 25, "bold"), bg='#A4B2D3', fg = 'white')
+    tmails_label.place(relx=0.5, rely=0.5, anchor='center')
 
 emcbg = ttk.Style
 emctable = ttk.Treeview(em_c, columns=("Date", "Subject", "Analysis", "Response"), show="headings")
