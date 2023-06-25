@@ -14,6 +14,7 @@ config = {
 'appId': "1:612338602406:web:dd0e8e6d1f905f5d60ff67",
 'measurementId': "G-J1896JVRT9"
 }
+
 firebase = pyrebase.initialize_app(config)
 auth = firebase.auth()
 

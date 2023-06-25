@@ -59,21 +59,27 @@ lbl.place(x=1, y=1)
 box_2 = Frame(scan, width=390, height=390, bg='#010F57')
 box_2.place(x=30, y=30)
 
+log = Image.open("img\\logs.JPG")
+log_pk = ImageTk.PhotoImage(log.resize((280, 280)))
+
+lbl2 = Label(box_2, image=log_pk, border=0)
+lbl2.place(x=55, y=15)
+
 # quit
-lg_btn = Button(box_2, bg="#010F57", bd=0, height=1, width=1, text="X", fg='white', font=('Arial', 15, 'bold'),
+lg_btn = Button(box_2, bg="white", bd=1, height=1, width=10, text="Cancel", fg='black', font=('Arial', 11, 'bold'),
                 cursor='hand2', command=to_sign)
-lg_btn.place(x=365, y=1)
+lg_btn.place(x=140, y=345)
 
 # To scan
 progress_label_text = StringVar()
 progress_label_text.set("Scanning... 0%")
 progress_label = Label(box_2, textvariable=progress_label_text, font=('Arial', 15, 'bold'), fg='white', bg="#010F57")
-progress_label.place(x=30, y=250)
+progress_label.place(x=30, y=285)
 
 progress_bar_width = 325
 progress_bar_height = 10
 progress_bar_x = 30
-progress_bar_y = 280
+progress_bar_y = 320
  
 canvas = Canvas(box_2, width=progress_bar_width, height=progress_bar_height, bg="white", highlightthickness=0)
 canvas.place(x=progress_bar_x, y=progress_bar_y)
@@ -120,9 +126,9 @@ def update_progress():
         progress = 0
         while progress <= progress_bar_width:
             canvas.coords(progress_bar, (0, 0, progress, progress_bar_height))
-            progress_label_text.set(f"Scanning... {int((progress / progress_bar_width) * 100)}%")
+            progress_label_text.set(f"Loading... {int((progress / progress_bar_width) * 100)}%")
             scan.update()
-            time.sleep(0.01)
+            time.sleep(0.009)
             progress += 1
         complete_scan()
         continue_scanning = False

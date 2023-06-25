@@ -169,8 +169,12 @@ vis_button = Button(box_2, width=15, height=15, bg='white', bd=0, image=show_pk,
 vis_button.place(x=232, y=175)
 
 # Button
-Button(box_2, width=20, pady=5, text="Sign In", bg='#041D9B', fg='white', cursor='hand2', font=('Arial', 12, 'bold'),
-       command=invalid, bd=0, activebackground='#021976', activeforeground='white').place(x=48, y=245)
+sign_in_btn = Button(box_2, width=20, pady=5, text="Sign In", bg='#041D9B', fg='white', cursor='hand2', font=('Arial', 12, 'bold'),
+       command=invalid, bd=0, activebackground='#021976', activeforeground='white')
+sign_in_btn.place(x=48, y=245)
+
+# Bind Enter key press event to Sign In button's command
+login.bind('<Return>', lambda event: sign_in_btn.invoke())
 
 # Forgot password
 f_pass = Button(box_2, width=15, text='Forgot Password?', border=0, bg='white', cursor='hand2', fg='#021976',
