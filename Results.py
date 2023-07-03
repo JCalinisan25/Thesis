@@ -7,6 +7,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import torch
 import seaborn as sns
+from csv import writer
+
 
 import os
 import base64
@@ -50,7 +52,7 @@ config = {
 
 firebase = pyrebase.initialize_app(config)
 database = firebase.database()
-
+summarydictionary = dict()
 
 
 # import firebase_admin
@@ -121,7 +123,7 @@ def googleapi():
     try:
         # Call the Gmail API
         service = build('gmail', 'v1', credentials=creds)
-        results = service.users().messages().list(userId='me', maxResults=50, q='newer_than:1d').execute()
+        results = service.users().messages().list(userId='me', maxResults=5, q='newer_than:1d').execute()
         #,labelIds=['CATEGORY_PERSONAL']
         # labels = results.get('labels', [])
         # print(results)
@@ -163,14 +165,21 @@ def googleapi():
             for x in range(len(samplelist)):
                 if samplelist[x]["name"] == "Date":
                     date = samplelist[x]["value"]
-            totalMessages.append(message)
+            # totalMessages.append(message)
             dostable.insert(parent="", index=i, iid=i, text="Row ",
                             values=(date, message["snippet"], "Medium Risk for Spam" if emailPredictions[i] == 1 else "No Risk for Spam",
                                     "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
+            # emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text="Row ",
+            #                 values=(date, message["snippet"], "Medium Risk for Spam" if emailPredictions[i] == 1 else "No Risk for Spam",
+            #                         "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
+            if message["id"] not in summarydictionary:
+                summarydictionary[message["id"]] = dict()
+                summarydictionary[message["id"]]["score"] = 0
+                summarydictionary[message["id"]]["totalscore"] = 0
+            summarydictionary[message["id"]]["score"] = summarydictionary[message["id"]]["score"] + ( 0 if emailPredictions[i] == 1 else 25)
+            summarydictionary[message["id"]]["totalscore"] = summarydictionary[message["id"]]["totalscore"] + 25
+            summarydictionary[message["id"]]["details"] = message
 
-            emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text="Row ",
-                            values=(date, message["snippet"], "Medium Risk for Spam" if emailPredictions[i] == 1 else "No Risk for Spam",
-                                    "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
             #hist_table.insert(parent="", index=i, iid=i, text="Row ",
                             #values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam",
                                     #"The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
@@ -188,7 +197,7 @@ def googleapi():
         print(f'An error occurred: {error}')
 
 
-def delete(messageId):
+def delete(messageDetails):
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
     else:
@@ -205,7 +214,29 @@ def delete(messageId):
         with open('token.json', 'w') as token:
             token.write(creds.to_json())
     service = build('gmail', 'v1', credentials=creds)
-    service.users().messages().trash(userId='me', id=messageId).execute()
+    service.users().messages().trash(userId='me', id=messageDetails["id"]).execute()
+    if checkboxvariable.get() == 1:
+        data = {
+            'Category': ['spam'],
+            'Message': [messageDetails["snippet"]]
+        }
+
+        # Make data frame of above data
+        df = pd.DataFrame(data)
+
+        # append data frame to CSV file
+        df.to_csv('spam.csv', mode='a', index=False, header=False)
+        # with open('spam.csv', 'a') as f_object:
+        #     # Pass this file object to csv.writer()
+        #     # and get a writer object
+        #     writer_object = writer(f_object)
+        #
+        #     # Pass the list as an argument into
+        #     # the writerow()
+        #     writer_object.writerow(["ham", messageDetails["snippet"]])
+        #
+        #     # Close the file object
+        #     f_object.close()
 
 def main2(emails):
     for dirname, _, filenames in os.walk('/kaggle/input'):
@@ -369,6 +400,7 @@ def gotoscreens():
                                     result.print()
                                     resultArray = result.pandas().xyxy[0].value_counts('name')
                                     messageSnippet = messageDetail["snippet"]
+                                    logoscore = 0
                                     message = ""
                                     explanation = ""
                                     if len(resultArray) == 0:
@@ -377,24 +409,29 @@ def gotoscreens():
                                     else:
                                         if result.pandas().xyxy[0].value_counts('name').axes[0][0].lower() in messageSnippet.lower():
                                             message = "Not phishing"
+                                            logoscore = 25
                                             explanation = f"Company logo({result.pandas().xyxy[0].value_counts('name').axes[0][0]}) found in the email message"
                                         else:
                                             message = "Possible Phishing"
                                             explanation = "Company logo not found in the email message"
+                                            logoscore = 12
 
-                                    totalMessages.append(messageDetail)
+                                    # totalMessages.append(messageDetail)
                                     # urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
                                     #                 values=(emailString, personalMessages[i]["snippet"], messageforurl,
                                     #                         explanationforurl))
-                                    emctable.insert(parent="", index=len(totalMessages),
-                                                    iid=len(totalMessages), text="",
-                                                    values=(file_name, messageSnippet, message,
-                                                            explanation))
+                                    # emctable.insert(parent="", index=len(totalMessages),
+                                    #                 iid=len(totalMessages), text="",
+                                    #                 values=(file_name, messageSnippet, message,
+                                    #                         explanation))
                                     logotable.insert(parent="", index=len(totalMessages),
                                                     iid=len(totalMessages), text="",
                                                     values=(file_name, messageSnippet, message,
                                                             explanation))
-
+                                    # if email_message["id"] not in summarydictionary:
+                                    summarydictionary[email_message["id"]] = dict()
+                                    summarydictionary[email_message["id"]]["totalscore"] = 25
+                                    summarydictionary[email_message["id"]]["score"] = logoscore
                 time.sleep(0.5)
     googleapi()
     phishing()
@@ -769,16 +806,20 @@ def phishing():
                 indexOfAtSign = fromStringValue.find('@')
                 domainString = fromStringValue[indexOfAtSign + 1:len(fromStringValue) - 1]
                 emailString = fromStringValue
+                score = 0
                 if domainString == 'gmail.com' or domainString == "yahoo.com":
                     messageforurl = "Medium Risk for Phishing"
                     explanationforurl = "The email of the sender is a personal email."
+                    score = 12
                 else:
                     indexOfLessThan = fromStringValue.find('<')
                     if indexOfLessThan == -1:
                         emailString = fromStringValue
                         messageforurl = "Low Risk for Phishing"
                         explanationforurl = "The sender's email is a legitimate email associated with their institution."
+                        score = 25
                     else:
+                        score = 25
                         emailString = fromStringValue[indexOfLessThan + 1:len(fromStringValue) - 1]
                         # urlString = "https://email-validator8.p.rapidapi.com/api/v2.0/email"
                         urlString = "https://mailcheck.p.rapidapi.com/"
@@ -795,13 +836,19 @@ def phishing():
                 #         if response.json()["disposable"] == True:
                 #             messageforurl = "High Risk for Phishing"
                 #             explanationforurl = "The sender's email is disposable"
+                #             score = 0
                 #         else:
                 #             messageforurl = "The sender's email looks legitimate."
+                #             score = 25
                 totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
-                emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text=personalMessages[i]["id"],
-                                values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
+                # emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text=personalMessages[i]["id"],
+                #                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
+                summarydictionary[personalMessages[i]["id"]]["totalscore"] = summarydictionary[personalMessages[i]["id"]]["totalscore"] + 25
+                summarydictionary[personalMessages[i]["id"]]["score"] = summarydictionary[personalMessages[i]["id"]]["score"] + score
+                emctable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
+                                values=(emailString, personalMessages[i]["snippet"], str(summarydictionary[personalMessages[i]["id"]]["score"]) + "/" + str(summarydictionary[personalMessages[i]["id"]]["totalscore"]), explanationforurl))
                 #hist_table.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
                                 #values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
     
@@ -819,16 +866,28 @@ def phishing():
     update_chart(urltable, dostable, logotable)
     save_to_database(dostable, logotable, urltable)
 
+checkboxvariable = IntVar()
+
+
+checkbox = Checkbutton(result, text = "Improve our database by including your trashed data", variable = checkboxvariable,
+                 onvalue = 1, offvalue = 0, height=1,
+                 width = 50)
+checkbox.place(x=500, y=15)
+
+
 def callback():
     indexSelected = notebook.index(notebook.select())
     if indexSelected == 0:
-        print("")
+        if emctable.focus() != '':
+            indexToBeDeleted = int(emctable.focus())
+            delete(totalMessages[indexToBeDeleted])
     elif indexSelected == 1:
         if emctable.focus() != '':
             indexToBeDeleted = int(emctable.focus())
-            delete(totalMessages[indexToBeDeleted]["id"])
+            # delete(totalMessages[indexToBeDeleted])
     else:
         print("")
+
 
 
 def todash():
