@@ -176,9 +176,11 @@ def googleapi():
                 summarydictionary[message["id"]] = dict()
                 summarydictionary[message["id"]]["score"] = 0
                 summarydictionary[message["id"]]["totalscore"] = 0
+                summarydictionary[message["id"]]["explanations"] = ""
             summarydictionary[message["id"]]["score"] = summarydictionary[message["id"]]["score"] + ( 0 if emailPredictions[i] == 1 else 25)
             summarydictionary[message["id"]]["totalscore"] = summarydictionary[message["id"]]["totalscore"] + 25
             summarydictionary[message["id"]]["details"] = message
+            summarydictionary[message["id"]]["explanations"] = summarydictionary[message["id"]]["explanations"] + " " + ( "Spam" if emailPredictions[i] == 1 else "")
 
             #hist_table.insert(parent="", index=i, iid=i, text="Row ",
                             #values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam",
@@ -403,16 +405,20 @@ def gotoscreens():
                                     logoscore = 0
                                     message = ""
                                     explanation = ""
+                                    phishingMessage = ""
                                     if len(resultArray) == 0:
                                         message = "Possible phishing"
+                                        phishingMessage = "Phishing"
                                         explanation = "Logo is not in the dataset of legit companies"
                                     else:
                                         if result.pandas().xyxy[0].value_counts('name').axes[0][0].lower() in messageSnippet.lower():
                                             message = "Not phishing"
+                                            phishingMessage = ""
                                             logoscore = 25
                                             explanation = f"Company logo({result.pandas().xyxy[0].value_counts('name').axes[0][0]}) found in the email message"
                                         else:
                                             message = "Possible Phishing"
+                                            phishingMessage = "Phishing"
                                             explanation = "Company logo not found in the email message"
                                             logoscore = 12
 
@@ -432,6 +438,7 @@ def gotoscreens():
                                     summarydictionary[email_message["id"]] = dict()
                                     summarydictionary[email_message["id"]]["totalscore"] = 25
                                     summarydictionary[email_message["id"]]["score"] = logoscore
+                                    summarydictionary[email_message["id"]]["explanations"] = phishingMessage
                 time.sleep(0.5)
     googleapi()
     phishing()
@@ -661,7 +668,8 @@ def update_chart(urltable, dostable, logotable):
     not_flagged_phish = total_phish - flagged_phish
     not_flagged_spam = total_spam - flagged_spam
     not_flagged_logo = total_logo - flagged_logo
-    flagged_emails = flagged_phish + not_flagged_logo + flagged_spam
+    phishing_emails = flagged_phish + not_flagged_logo 
+    spam_emails = flagged_spam
     normal_emails = not_flagged_phish + not_flagged_spam + flagged_logo
     total_emails = total_spam + total_phish + total_logo
     percentages = {
@@ -697,7 +705,7 @@ def update_chart(urltable, dostable, logotable):
     ax2.axis('equal')  # Ensure pie is drawn as a circle
 
     # Set a common label for both charts
-    fig.text(0.5, 0.94, 'Email Categories', ha='center', fontsize=14, weight='bold')
+    #fig.text(0.5, 0.94, 'Email Categories', ha='center', fontsize=14, weight='bold')
 
     canvas = FigureCanvasTkAgg(fig, master=chart)
     canvas.get_tk_widget().pack(pady=10, padx=20)
@@ -708,31 +716,31 @@ def update_chart(urltable, dostable, logotable):
     f1.place(x=165, y=435)
 
     # Create a label to display the flagged emails count
-    flagged_emails_label = Label(f1, text=f"Flagged Emails(Phishing&Spam):", font=("Arial", 12, "bold"), bg='#85CEB7', fg = 'white')
-    flagged_emails_label.place(y=5)
+    phishing_emails_label = Label(f1, text=f"Phishing Emails:", font=("Arial", 12, "bold"), bg='#85CEB7', fg = 'white')
+    phishing_emails_label.place(y=5)
 
-    femails_label = Label(f1, text=f"{flagged_emails}", font=("Arial", 25, "bold"), bg='#85CEB7', fg = 'white')
-    femails_label.place(relx=0.5, rely=0.5, anchor='center')
+    pemails_label = Label(f1, text=f"{phishing_emails}", font=("Arial", 25, "bold"), bg='#85CEB7', fg = 'white')
+    pemails_label.place(relx=0.5, rely=0.5, anchor='center')
 
     f2 = Frame(chart, width=300, height=300, bg='#FBA481')
     f2.place(x=620, y=435)
 
     # Create a label to display the normal emails count
-    normal_emails_label = Label(f2, text="Normal Emails:", font=("Arial", 12, "bold"), bg='#FBA481', fg = 'white')
-    normal_emails_label.place(y=5)
+    spam_emails_label = Label(f2, text="Spam Emails:", font=("Arial", 12, "bold"), bg='#FBA481', fg = 'white')
+    spam_emails_label.place(y=5)
 
-    nemails_label = Label(f2, text=f"{normal_emails}", font=("Arial", 25, "bold"), bg='#FBA481', fg = 'white')
-    nemails_label.place(relx=0.5, rely=0.5, anchor='center')
+    semails_label = Label(f2, text=f"{spam_emails}", font=("Arial", 25, "bold"), bg='#FBA481', fg = 'white')
+    semails_label.place(relx=0.5, rely=0.5, anchor='center')
 
     f3 = Frame(chart, width=300, height=300, bg='#A4B2D3')
     f3.place(x=1065, y=435)
 
     # Create a label to display the Total emails count
-    total_emails_label = Label(f3, text="Total Emails:", font=("Arial", 12, "bold"), bg='#A4B2D3', fg = 'white')
-    total_emails_label.place(y=5)
+    normal_emails_label = Label(f3, text="Normal Emails:", font=("Arial", 12, "bold"), bg='#A4B2D3', fg = 'white')
+    normal_emails_label.place(y=5)
 
-    tmails_label = Label(f3, text=f"{total_emails}", font=("Arial", 25, "bold"), bg='#A4B2D3', fg = 'white')
-    tmails_label.place(relx=0.5, rely=0.5, anchor='center')
+    nmails_label = Label(f3, text=f"{normal_emails}", font=("Arial", 25, "bold"), bg='#A4B2D3', fg = 'white')
+    nmails_label.place(relx=0.5, rely=0.5, anchor='center')
 
 emcbg = ttk.Style
 emctable = ttk.Treeview(em_c, columns=("Date", "Subject", "Analysis", "Response"), show="headings")
@@ -749,11 +757,11 @@ emctable.configure(xscrollcommand=emctablehorscrlbar.set, yscrollcommand=emctabl
 
 emctable.heading("Date", text="Details", anchor="center")
 emctable.heading("Subject", text="Subject", anchor="center")
-emctable.heading("Analysis", text="Analysis", anchor="center")
+emctable.heading("Analysis", text="Score", anchor="center")
 emctable.heading("Response", text="Response", anchor="center")
-emctable.column("Date", minwidth=240, anchor="w")
-emctable.column("Subject", width=710, anchor="w")
-emctable.column("Analysis", width=130, anchor="w")
+emctable.column("Date", minwidth=150, anchor="w")
+emctable.column("Subject", width=800, anchor="w")
+emctable.column("Analysis", width=90, anchor="w")
 emctable.column("Response", width=450, anchor="w")
 
 # Place treeview and scrollbars
@@ -805,16 +813,19 @@ def phishing():
                 fromStringValue = personalMessages[i]['payload']["headers"][headerindex]["value"]
                 indexOfAtSign = fromStringValue.find('@')
                 domainString = fromStringValue[indexOfAtSign + 1:len(fromStringValue) - 1]
+                phishingMessage = ""
                 emailString = fromStringValue
                 score = 0
                 if domainString == 'gmail.com' or domainString == "yahoo.com":
                     messageforurl = "Medium Risk for Phishing"
                     explanationforurl = "The email of the sender is a personal email."
+                    phishingMessage = "Phishing"
                     score = 12
                 else:
                     indexOfLessThan = fromStringValue.find('<')
                     if indexOfLessThan == -1:
                         emailString = fromStringValue
+                        # phishingMessage = ""
                         messageforurl = "Low Risk for Phishing"
                         explanationforurl = "The sender's email is a legitimate email associated with their institution."
                         score = 25
@@ -832,14 +843,15 @@ def phishing():
                         }
 
                         # uncomment
-                #         response = requests.get(urlString, headers=headers, params=querystring)
-                #         if response.json()["disposable"] == True:
-                #             messageforurl = "High Risk for Phishing"
-                #             explanationforurl = "The sender's email is disposable"
-                #             score = 0
-                #         else:
-                #             messageforurl = "The sender's email looks legitimate."
-                #             score = 25
+                        # response = requests.get(urlString, headers=headers, params=querystring)
+                        # if response.json()["disposable"] == True:
+                        #     messageforurl = "High Risk for Phishing"
+                        #     explanationforurl = "The sender's email is disposable"
+                        #     phishingMessage = "Phishing"
+                        #     score = 0
+                        # else:
+                        #     messageforurl = "The sender's email looks legitimate."
+                        #     score = 25
                 totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
@@ -847,8 +859,9 @@ def phishing():
                 #                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
                 summarydictionary[personalMessages[i]["id"]]["totalscore"] = summarydictionary[personalMessages[i]["id"]]["totalscore"] + 25
                 summarydictionary[personalMessages[i]["id"]]["score"] = summarydictionary[personalMessages[i]["id"]]["score"] + score
+                summarydictionary[personalMessages[i]["id"]]["explanations"] = summarydictionary[personalMessages[i]["id"]]["explanations"] + phishingMessage
                 emctable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
-                                values=(emailString, personalMessages[i]["snippet"], str(summarydictionary[personalMessages[i]["id"]]["score"]) + "/" + str(summarydictionary[personalMessages[i]["id"]]["totalscore"]), explanationforurl))
+                                values=(emailString, personalMessages[i]["snippet"] if len(personalMessages[i]["snippet"]) != 0 else "Image", str(summarydictionary[personalMessages[i]["id"]]["score"]) + "/" + str(summarydictionary[personalMessages[i]["id"]]["totalscore"]), summarydictionary[personalMessages[i]["id"]]["explanations"]))
                 #hist_table.insert(parent="", index=i + len(personalMessages), iid=i + len(personalMessages), text=personalMessages[i]["id"],
                                 #values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
     
