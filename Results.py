@@ -8,6 +8,9 @@ from matplotlib.figure import Figure
 import torch
 import seaborn as sns
 from csv import writer
+from tabulate import tabulate
+import matplotlib.dates as mdates
+from datetime import datetime, timedelta
 
 
 import os
@@ -100,6 +103,7 @@ def googleapi():
     """Shows basic usage of the Gmail API.
    Lists the user's Gmail labels.
    """
+
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
@@ -165,10 +169,17 @@ def googleapi():
             for x in range(len(samplelist)):
                 if samplelist[x]["name"] == "Date":
                     date = samplelist[x]["value"]
+             # Determine the analysis and apply color highlighting if necessary
+            analysis = "Medium Risk for Spam" if emailPredictions[i] == 1 else "No Risk for Spam"
+            if emailPredictions[i] == 1:
+                analysis = "Medium Risk for Spam"
+
+            response = "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."
             # totalMessages.append(message)
+            tag = "medium_risk" if emailPredictions[i] == 1 else "no_risk"
             dostable.insert(parent="", index=i, iid=i, text="Row ",
-                            values=(date, message["snippet"], "Medium Risk for Spam" if emailPredictions[i] == 1 else "No Risk for Spam",
-                                    "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
+                            values=(date, message["snippet"], analysis, response),
+                            tags=(tag,))
             # emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text="Row ",
             #                 values=(date, message["snippet"], "Medium Risk for Spam" if emailPredictions[i] == 1 else "No Risk for Spam",
             #                         "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
@@ -193,6 +204,8 @@ def googleapi():
         dostable.place(x=0, y=1, width=1513, height=752)  # Adjust these values as needed
         dostableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
         #dostablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+        dostable.tag_configure("medium_risk", background="orange")
+        dostable.tag_configure("no_risk", background="lightgreen")
 
     except HttpError as error:
         # TODO(developer) - Handle errors from gmail API.
@@ -371,6 +384,8 @@ def gotoscreens():
         logotable.place(x=0, y=1, width=1513, height=752)  # Adjust these values as needed
         logtableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
         #logtablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+        logotable.tag_configure("possible_phishing", background="red")
+        logotable.tag_configure("no_phishing", background="lightgreen")
         if email_messages is not None:
             for email_message in email_messages:
                 messageDetail = get_message_detail(email_message['id'], msg_format='full', metadata_headers=['parts'])
@@ -410,17 +425,20 @@ def gotoscreens():
                                         message = "Possible phishing"
                                         phishingMessage = "Phishing"
                                         explanation = "Logo is not in the dataset of legit companies"
+                                        tag = "possible_phishing"
                                     else:
                                         if result.pandas().xyxy[0].value_counts('name').axes[0][0].lower() in messageSnippet.lower():
                                             message = "Not phishing"
                                             phishingMessage = ""
                                             logoscore = 25
                                             explanation = f"Company logo({result.pandas().xyxy[0].value_counts('name').axes[0][0]}) found in the email message"
+                                            tag = "no_phishing"
                                         else:
                                             message = "Possible Phishing"
                                             phishingMessage = "Phishing"
                                             explanation = "Company logo not found in the email message"
                                             logoscore = 12
+                                            tag = "possible_phishing"
 
                                     # totalMessages.append(messageDetail)
                                     # urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
@@ -432,8 +450,8 @@ def gotoscreens():
                                     #                         explanation))
                                     logotable.insert(parent="", index=len(totalMessages),
                                                     iid=len(totalMessages), text="",
-                                                    values=(file_name, messageSnippet, message,
-                                                            explanation))
+                                                    values=(file_name, messageSnippet, message, explanation),
+                                                            tags=(tag,))
                                     # if email_message["id"] not in summarydictionary:
                                     summarydictionary[email_message["id"]] = dict()
                                     summarydictionary[email_message["id"]]["totalscore"] = 25
@@ -540,9 +558,40 @@ def update_history_table(data):
         subject = entry['subject']
         analysis= entry['analysis']
         response = entry['response']
+
+        # Determine the analysis tag for color highlighting
+        if analysis == "Medium Risk for Spam":
+            tag = "medium_risk"
+        elif analysis == "No Risk for Spam":
+            tag = "no_risk"
+        elif analysis == "Possible Phishing":
+            tag = "possible_phishing"
+        elif analysis == "No Phishing":
+            tag = "no_phishing"
+        elif analysis == "Low Risk for Phishing":
+            tag = "low_risk"
+        elif analysis == "Medium Rsk for Phishing":
+            tag = "med_risk"
+        elif analysis == "High Risk for Phishing":
+            tag = "high_risk"
+        elif analysis == "The sender's email looks legitimate.":
+            tag = "legitimate"
+        else:
+            tag = ""
         
         hist_table.insert(parent="", index=i, iid=i, text="Row ",
-                     values=(date, subject, analysis, response))
+                     values=(date, subject, analysis, response),
+                     tags=(tag,))
+        
+    # Configure the tag-specific styles
+    hist_table.tag_configure("medium_risk", background="orange")
+    hist_table.tag_configure("no_risk", background="lightgreen")
+    hist_table.tag_configure("possible_phishing", background="red")
+    hist_table.tag_configure("no_risk", background="lightgreen")
+    hist_table.tag_configure("low_risk", background="yellow")
+    hist_table.tag_configure("med_risk", background="orange")
+    hist_table.tag_configure("high_risk", background="red")
+    hist_table.tag_configure("legitimate", background="lightgreen")
 
 # Read user's email from user.json
 with open('user.json', 'r') as file:
@@ -601,7 +650,7 @@ def save_to_database(dostable, urltable, logotable):
         })
 
    # Save the result data to the database with a single push ID
-    #database.child('Results').child(email.replace('.', '_')).push(result_data)
+    database.child('Results').child(email.replace('.', '_')).push(result_data)
 
     
     # Update the history table with the saved data
@@ -652,7 +701,7 @@ def update_chart(urltable, dostable, logotable):
 
     for item in items_phish:
         analysis = urltable.item(item)['values'][2]
-        if analysis == "Medium Risk for Phishing" or analysis == "High Risk for Phishing":
+        if analysis == "Low Risk for Phishing" or analysis == "Medium Risk for Phishing" or analysis == "High Risk for Phishing":
             flagged_phish += 1
 
     for item in items_spam:
@@ -711,6 +760,7 @@ def update_chart(urltable, dostable, logotable):
     canvas.get_tk_widget().pack(pady=10, padx=20)
 
     canvas.draw()
+
 
     f1 = Frame(chart, width=300, height=300, bg='#85CEB7')
     f1.place(x=165, y=435)
@@ -821,6 +871,7 @@ def phishing():
                     explanationforurl = "The email of the sender is a personal email."
                     phishingMessage = "Phishing"
                     score = 12
+                    tag = "Medium_risk"
                 else:
                     indexOfLessThan = fromStringValue.find('<')
                     if indexOfLessThan == -1:
@@ -829,6 +880,7 @@ def phishing():
                         messageforurl = "Low Risk for Phishing"
                         explanationforurl = "The sender's email is a legitimate email associated with their institution."
                         score = 25
+                        tag = "Low_risk"
                     else:
                         score = 25
                         emailString = fromStringValue[indexOfLessThan + 1:len(fromStringValue) - 1]
@@ -843,18 +895,24 @@ def phishing():
                         }
 
                         # uncomment
-                        # response = requests.get(urlString, headers=headers, params=querystring)
-                        # if response.json()["disposable"] == True:
-                        #     messageforurl = "High Risk for Phishing"
-                        #     explanationforurl = "The sender's email is disposable"
-                        #     phishingMessage = "Phishing"
-                        #     score = 0
-                        # else:
-                        #     messageforurl = "The sender's email looks legitimate."
-                        #     score = 25
+                        response = requests.get(urlString, headers=headers, params=querystring)
+                        if response.json()["disposable"] == True:
+                            messageforurl = "High Risk for Phishing"
+                            explanationforurl = "The sender's email is disposable"
+                            phishingMessage = "Phishing"
+                            score = 0
+                            tag = "High_risk"
+                        else:
+                            messageforurl = "The sender's email looks legitimate."
+                            score = 25
+                            tag = "legit"
+                            
+
+                # Insert the row with the appropriate tag for color highlighting
                 totalMessages.append(personalMessages[i])
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
-                                values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
+                                values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl),
+                                tags=(tag,))
                 # emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text=personalMessages[i]["id"],
                 #                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
                 summarydictionary[personalMessages[i]["id"]]["totalscore"] = summarydictionary[personalMessages[i]["id"]]["totalscore"] + 25
@@ -876,6 +934,10 @@ def phishing():
     urltable.place(x=0, y=1, width=1513, height=752)  # Adjust these values as needed
     urltableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
     #urltablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+    urltable.tag_configure("Low_risk", background="yellow")
+    urltable.tag_configure("Medium_risk", background="orange")
+    urltable.tag_configure("High_risk", background="red")
+    urltable.tag_configure("legit", background="lightgreen")
     update_chart(urltable, dostable, logotable)
     save_to_database(dostable, logotable, urltable)
 
