@@ -608,8 +608,19 @@ def save_to_database(dostable, urltable, logotable):
             'response': response
         })
 
-    # Save the result data to the database with a single push ID
-    database.child('Results').child(email.replace('.', '_')).set(result_data)
+    # Retrieve the existing data
+    existing_data = database.child('Results').child(email.replace('.', '_')).get().val()
+
+    # Check for duplicates and merge the new data with existing data
+    if existing_data is not None:
+        for entry in result_data:
+            if entry not in existing_data:
+                existing_data.append(entry)
+    else:
+        existing_data = result_data
+
+    # Save the updated data to the database
+    database.child('Results').child(email.replace('.', '_')).set(existing_data)
 
     
     # Update the history table with the saved data
@@ -693,7 +704,7 @@ def update_history_table(data, table):
 result_data = []
 data = database.child('Results').child(email.replace('.', '_')).get()
 
-if data:
+if data.val():
     for entry in data.each():
         result_data.append(entry.val())
 
