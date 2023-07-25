@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
@@ -709,7 +709,7 @@ if data.val():
         result_data.append(entry.val())
 
 # Update the history table with the retrieved data
-update_history_table(result_data, hist_table)
+# update_history_table(result_data, hist_table)
 
 def update_chart(urltable, dostable, logotable):
     items_phish = urltable.get_children()  # Get all items in urltable
@@ -985,7 +985,7 @@ def phishing():
     # urltable.tag_configure("High_risk", background="red")
     # urltable.tag_configure("legit", background="lightgreen")
     update_chart(urltable, dostable, logotable)
-    save_to_database(dostable, logotable, urltable)
+    # save_to_database(dostable, logotable, urltable)
 
 checkboxvariable = IntVar()
 
@@ -995,13 +995,24 @@ checkbox = Checkbutton(result, text = "Improve our database by including your tr
                  width = 50)
 checkbox.place(x=500, y=15)
 
+def refresh():
+    result.destroy()
+    os.system("Results.py")
+def open_popup():
+   messagebox.showinfo("Message", "Successfully deleted!")
 
 def callback():
     indexSelected = notebook.index(notebook.select())
     if indexSelected == 0:
         if emctable.focus() != '':
             indexToBeDeleted = int(emctable.focus())
+            # emctable.focus()
+            open_popup()
+            emctable.delete(emctable.focus())
+            # del totalMessages[indexToBeDeleted]
+            # TODO: uncomment
             delete(totalMessages[indexToBeDeleted])
+
     elif indexSelected == 1:
         if emctable.focus() != '':
             indexToBeDeleted = int(emctable.focus())
@@ -1017,6 +1028,9 @@ def todash():
 
 spamButton = Button(result, text="Move to trash", command=callback)
 spamButton.place(x=1000, y=15)
+
+refreshButton = Button(result, text="Refresh", command=refresh)
+refreshButton.place(x=1200, y=15)
 
 bck_btn = Button(result, text="Return to dashboard", command=todash)
 bck_btn.place(x=1400, y=15)
