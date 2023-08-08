@@ -1,4 +1,4 @@
-from tkinter import *
+from tkinter import Tk, Button, Frame, Label, Entry, StringVar, BooleanVar, Checkbutton
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import pyrebase, json, requests, webbrowser
@@ -53,7 +53,7 @@ def show_password():
 
 def is_valid_email(email):
     # Use regex pattern for email validation
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    pattern = r'^[a-zA-Z0-9._%+-]+@gmail\.com$'
     return re.match(pattern, email)
 
 # Validation of username and password
@@ -68,7 +68,7 @@ def validate_inputs():
     elif email.get() == '':
         messagebox.showerror("Error", "Please provide an email address!")
     elif not is_valid_email(email_value):
-        messagebox.showerror("Error", "Invalid Email Address Format!\n(Example: Abcd@email.com)")
+        messagebox.showerror("Error", "Invalid Email Address Format!\n(Example: Abcd@gmail.com)\n\n\n\nNote: Please Use Gmail Only.")
     elif usernm.get() == '':
         messagebox.showerror("Error", "Please provide a username!")
     elif len(usernm.get()) < 3:  # Check the length of the username
@@ -108,7 +108,7 @@ def validate_inputs():
         messagebox.showinfo('Success','Registration Successfully.')
         database.child("Users").push(data)
         regist.destroy()
-        os.system('verified.py')
+        os.system('Verified.py')
 
 # PDF Terms and Conditions 
 def show_terms():
