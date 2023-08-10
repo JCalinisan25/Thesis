@@ -1,4 +1,4 @@
-from tkinter import *
+from tkinter import Tk,Frame, Label, Button, Entry
 from tkinter import messagebox
 from PIL import Image, ImageTk
 import os, re, pyrebase, json

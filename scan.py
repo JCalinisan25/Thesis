@@ -1,4 +1,4 @@
-from tkinter import *
+from tkinter import StringVar, Tk, Label, Frame, Button, Canvas
 from PIL import Image, ImageTk
 from tkinter import messagebox
 import os, time
@@ -37,7 +37,7 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 def to_sign():
     global continue_scanning
-    if messagebox.askyesno("Confirmation", "Are you sure you want to quit while scanning?"):
+    if messagebox.askyesno("Confirmation", "Are you sure you want to cancel while scanning?"):
         continue_scanning = False
         scan.destroy()
         os.system('Dashboard.py')
@@ -128,7 +128,7 @@ def update_progress():
             canvas.coords(progress_bar, (0, 0, progress, progress_bar_height))
             progress_label_text.set(f"Loading... {int((progress / progress_bar_width) * 100)}%")
             scan.update()
-            time.sleep(0.009)
+            time.sleep(0.005)
             progress += 1
         complete_scan()
         continue_scanning = False

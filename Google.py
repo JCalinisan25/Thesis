@@ -87,7 +87,7 @@ class GoogleSheetsHelper:
             'sheetId': sheet_id,
             'startRowIndex': start_row_number - 1,
             'endRowIndex': end_row_number,
-            'startColumnIndex': start_column_number - 1,
+            'startColumnIndex': start_column_number - 1, # type: ignore
             'endColumnIndex': end_column_number
         }
         return json_body

@@ -55,9 +55,6 @@ firebase = pyrebase.initialize_app(config)
 database = firebase.database()
 summarydictionary = dict()
 
-
-
-# import firebase_admin
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify']
 totalMessages = []
@@ -138,7 +135,6 @@ def googleapi():
             message = get_message(service, 'me', results['messages'][i]['id'])
             print(str(i), message)
             messages.append(message)
-        # table.pack()
 
         # Constructing vertical scrollbar with treeview
         dostableverscrlbar = ttk.Scrollbar(dos, orient="vertical", command=dostable.yview)
@@ -176,9 +172,7 @@ def googleapi():
             dostable.insert(parent="", index=i, iid=i, text="Row ", # type: ignore
                             values=(date, message["snippet"], analysis, response),
                             tags=(tag))
-            # emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text="Row ",
-            #                 values=(date, message["snippet"], "Medium Risk for Spam" if emailPredictions[i] == 1 else "No Risk for Spam",
-            #                         "The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
+            
             if message["id"] not in summarydictionary:
                 summarydictionary[message["id"]] = dict()
                 summarydictionary[message["id"]]["score"] = 0
@@ -187,12 +181,8 @@ def googleapi():
             summarydictionary[message["id"]]["score"] = summarydictionary[message["id"]]["score"] + ( 0 if emailPredictions[i] == 1 else 25)
             summarydictionary[message["id"]]["totalscore"] = summarydictionary[message["id"]]["totalscore"] + 25
             summarydictionary[message["id"]]["details"] = message
-            summarydictionary[message["id"]]["explanations"] = summarydictionary[message["id"]]["explanations"] + " " + ( "Spam" if emailPredictions[i] == 1 else "")
-
-            #hist_table.insert(parent="", index=i, iid=i, text="Row ",
-                            #values=(date, message["snippet"], "Medium Risk" if emailPredictions[i] == 1 else "No Risk for Spam",
-                                    #"The message has characteristics of a spam message" if emailPredictions[i] == 1 else "No suspicious elements were found."))
-
+            summarydictionary[message["id"]]["explanations"] = summarydictionary[message["id"]]["explanations"] + "" + ( "Spam" if emailPredictions[i] == 1 else "")
+        
         dostable.column("Date", width=180, anchor="w")
         dostable.column("Subject", width=565, anchor="w")
         dostable.column("Analysis", width=130, anchor="w")
@@ -237,18 +227,7 @@ def delete(messageDetails):
 
         # append data frame to CSV file
         df.to_csv('spam.csv', mode='a', index=False, header=False)
-        # with open('spam.csv', 'a') as f_object:
-        #     # Pass this file object to csv.writer()
-        #     # and get a writer object
-        #     writer_object = writer(f_object)
-        #
-        #     # Pass the list as an argument into
-        #     # the writerow()
-        #     writer_object.writerow(["ham", messageDetails["snippet"]])
-        #
-        #     # Close the file object
-        #     f_object.close()
-
+        
 def main2(emails):
     for dirname, _, filenames in os.walk('/kaggle/input'):
         for filename in filenames:
@@ -269,9 +248,6 @@ def printhi(emails):
 
     X_train, X_test, y_train, y_test = train_test_split(data.Message, data.Spam, test_size=0.5)
 
-    # for dirname, _, filenames in os.walk('/kaggle/input'):
-    #     for filename in filenames:
-    #         print(os.path.join(dirname, filename))
 
     clf = Pipeline([
         ('vectorizer', CountVectorizer()),
@@ -343,8 +319,6 @@ def gotoscreens():
             creds = Credentials.from_authorized_user_file('token.json', SCOPES)
         else:
             creds = None
-        # creds = None
-        # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
@@ -402,11 +376,6 @@ def gotoscreens():
                                     print(f'File {file_name} is saved at {save_location}')
                                     model = torch.hub.load('ultralytics/yolov5','custom', 'best.pt')
 
-                                    # img_data = b'base64 string'
-
-                                    # with open("path/to/saved_image.jpg", "wb") as fh:
-                                    #     fh.write(base64.decodebytes(img_data))
-
                                     im = file_name
 
                                     result = model(im)
@@ -419,7 +388,7 @@ def gotoscreens():
                                     phishingMessage = ""
                                     if len(resultArray) == 0:
                                         message = "Possible phishing"
-                                        phishingMessage = "Phishing"
+                                        phishingMessage = " "
                                         explanation = "Logo is not in the dataset of legit companies"
                                         tag = "possible_phishing"
                                     else:
@@ -431,19 +400,12 @@ def gotoscreens():
                                             tag = "no_phishing"
                                         else:
                                             message = "Possible Phishing"
-                                            phishingMessage = "Phishing"
+                                            phishingMessage = ""
                                             explanation = "Company logo not found in the email message"
                                             logoscore = 12
                                             tag = "possible_phishing"
 
-                                    # totalMessages.append(messageDetail)
-                                    # urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"],
-                                    #                 values=(emailString, personalMessages[i]["snippet"], messageforurl,
-                                    #                         explanationforurl))
-                                    # emctable.insert(parent="", index=len(totalMessages),
-                                    #                 iid=len(totalMessages), text="",
-                                    #                 values=(file_name, messageSnippet, message,
-                                    #                         explanation))
+                    
                                     logotable.insert(parent="", index=logoCounter,# type: ignore
                                                     iid=logoCounter, text="", # type: ignore
                                                     values=(file_name, messageSnippet, message, explanation),
@@ -453,7 +415,7 @@ def gotoscreens():
                                     summarydictionary[email_message["id"]] = dict()
                                     summarydictionary[email_message["id"]]["totalscore"] = 25
                                     summarydictionary[email_message["id"]]["score"] = logoscore
-                                    summarydictionary[email_message["id"]]["explanations"] = phishingMessage + "Practice caution and(or) ignore this email"
+                                    summarydictionary[email_message["id"]]["explanations"] = phishingMessage
                 time.sleep(0.5)
     googleapi()
     phishing()
@@ -537,14 +499,9 @@ dos_o = Label(dos,text="Orange - Medium Risk", fg='orange', bg='#010F57', font=(
 dos_o.place(x=800,y=10)
 dos_r = Label(dos,text="Red - High Risk", fg='red', bg='#010F57', font=('Arial', 10, 'bold'))
 dos_r.place(x=1000,y=10)
-# Label(dos, text="The domain '@d1scord.com' has been found to be fraudulent. "
-#                 "\nIt appears to be mimicking 'discord.com'.", fg='white', width=75, height=50,
-#       bg='#010F57', bd=0, font=('Arial', 9, 'bold')).pack()
 
 # Email Tab
 em_c.configure(background='#010F57')
-# Label(em_c, text="The email content has been found to be fraudulent.", fg='white', width=75, height=50,
-#       bg='#010F57', bd=0, font=('Arial', 9, 'bold')).pack()
 
 # Logo Tab
 logo.configure(background='#010F57')
@@ -643,11 +600,6 @@ def save_to_database(dostable, urltable, logotable):
     # Save the updated data to the database
     database.child('Results').child(email.replace('.', '_')).set(existing_data)
 
-    
-    # Update the history table with the saved data
-    # update_history_table(result_data)
-
-
 
 # History Tab
 hist.configure(background='#010F57')
@@ -661,7 +613,6 @@ hist_r = Label(hist,text="Red - High Risk", fg='red', bg='#010F57', font=('Arial
 hist_r.place(x=1000,y=10)
 bg = ttk.Style
 hist_table = ttk.Treeview(hist, columns=("Details", "Subject", "Analysis", "Response"), show="headings")
-# table.pack()
 
 # Constructing vertical scrollbar with treeview
 histtableverscrlbar = ttk.Scrollbar(hist, orient="vertical", command=hist_table.yview)
@@ -683,7 +634,7 @@ hist_table.column("Response", width=400, anchor="w")
 # Place treeview and scrollbars
 hist_table.place(x=0, y=40, width=1513, height=700)  # Adjust these values as needed
 histtableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
-#histtablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
+
 
 # Function to update the history table with result data
 def update_history_table(data, table):
@@ -844,7 +795,6 @@ def update_chart(urltable, dostable, logotable):
 
 emcbg = ttk.Style
 emctable = ttk.Treeview(em_c, columns=("Date", "Subject", "Analysis", "Response"), show="headings")
-# table.pack()
 
 # Constructing vertical scrollbar with treeview
 emctableverscrlbar = ttk.Scrollbar(em_c, orient="vertical", command=emctable.yview)
@@ -867,7 +817,6 @@ emctable.column("Response", width=450, anchor="w")
 # Place treeview and scrollbars
 emctable.place(x=0, y=1, width=1513, height=752)  # Adjust these values as needed
 emctableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
-#emctablehorscrlbar.place(x=0, y=735, width=1513, height=20)  # Adjust these values as needed
 
 
 urlbg = ttk.Style
@@ -879,9 +828,7 @@ def selectItem(a):
     print(urltable.item(curItem))
 
 def phishing():
-    #UI
 
-        # table.pack()
     # Constructing vertical scrollbar with treeview
     urltableverscrlbar = ttk.Scrollbar(url, orient="vertical", command=urltable.yview)
 
@@ -894,14 +841,9 @@ def phishing():
     urltable.heading("Subject", text="Subject", anchor="center")
     urltable.heading("Source", text="Analysis", anchor="center")
     urltable.heading("Response", text="Response", anchor="center")
+    
     #data
-    # messageforurl = []
     for i in range(len(messages)):
-        # hasPersonalLabel = False
-        # for labelIndex in range(len(messages[i]["labelIds"])):
-            # if messages[i]["labelIds"][labelIndex] == 'CATEGORY_PERSONAL':
-                # hasPersonalLabel = True
-        # if hasPersonalLabel == True:
             personalMessages.append(messages[i])
 
     print("PHISHING MESSAGES:", personalMessages)
@@ -962,16 +904,18 @@ def phishing():
                 urltable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"], # type: ignore
                                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl)
                                 ,tags=(tag,))
-                # emctable.insert(parent="", index=len(totalMessages), iid=len(totalMessages), text=personalMessages[i]["id"],
-                #                 values=(emailString, personalMessages[i]["snippet"], messageforurl, explanationforurl))
+                
                 summarydictionary[personalMessages[i]["id"]]["totalscore"] = summarydictionary[personalMessages[i]["id"]]["totalscore"] + 25
                 summarydictionary[personalMessages[i]["id"]]["score"] = summarydictionary[personalMessages[i]["id"]]["score"] + score
-                summarydictionary[personalMessages[i]["id"]]["explanations"] = summarydictionary[personalMessages[i]["id"]]["explanations"] + phishingMessage + "Practice caution and(or) ignore this email"
+                summarydictionary[personalMessages[i]["id"]]["explanations"] = summarydictionary[personalMessages[i]["id"]]["explanations"] + phishingMessage
+                explanation = "Safe to open"
+                if "Spam" in summarydictionary[personalMessages[i]["id"]]["explanations"]:
+                    explanation = "Spam, Ignore this email"
+                elif "Phishing" in summarydictionary[personalMessages[i]["id"]]["explanations"]:
+                    explanation = "Phishing, Delete this email"
                 emctable.insert(parent="", index=i, iid=i, text=personalMessages[i]["id"], # type: ignore
-                                values=(emailString, personalMessages[i]["snippet"] if len(personalMessages[i]["snippet"]) != 0 else "Image", 
-                                        str(summarydictionary[personalMessages[i]["id"]]["score"]) + "/" + str(summarydictionary[personalMessages[i]["id"]]["totalscore"]), 
-                                        summarydictionary[personalMessages[i]["id"]]["explanations"]))
-                                        #, tags=(tag,))
+                                values=(emailString, personalMessages[i]["snippet"] if len(personalMessages[i]["snippet"]) != 0 else "Image", str(summarydictionary[personalMessages[i]["id"]]["score"]) 
+                                        + "/" + str(summarydictionary[personalMessages[i]["id"]]["totalscore"]), explanation))
             
                 urltable.column("Email", minwidth=240, anchor="w")
                 urltable.column("Subject", width=515, anchor="w")
@@ -983,7 +927,6 @@ def phishing():
     # Place treeview and scrollbars
     urltable.place(x=0, y=40, width=1513, height=700)  # Adjust these values as needed
     urltableverscrlbar.place(x=1513, y=0, width=20, height=755)  # Adjust these values as needed
-    #urltablehorscrlbar.place(x=0, y=445, width=877, height=20)  # Adjust these values as needed
     urltable.tag_configure("Low_risk", background="yellow")
     urltable.tag_configure("Medium_risk", background="orange")
     urltable.tag_configure("High_risk", background="red")
@@ -1022,7 +965,6 @@ def callback():
     elif indexSelected == 1:
         if emctable.focus() != '':
             indexToBeDeleted = int(emctable.focus())
-            # delete(totalMessages[indexToBeDeleted])
     else:
         print("")
 

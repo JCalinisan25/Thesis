@@ -1,5 +1,5 @@
 import os
-from tkinter import *
+from tkinter import Frame, Button, Label, Tk, Entry
 from PIL import Image, ImageTk
 from tkinter import messagebox
 import pyrebase, requests, json

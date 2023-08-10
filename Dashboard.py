@@ -1,7 +1,7 @@
-from tkinter import *
+from tkinter import Tk, Label, Frame, Button, PhotoImage
 from PIL import Image, ImageTk, ImageDraw
 from tkinter import messagebox, filedialog
-import os, pyrebase, json
+import os, pyrebase, json, webbrowser
 
 config = {
     'apiKey': "AIzaSyAqlITRDZ3gaw5rHhy9hUCwN4xAUDT-svc",
@@ -21,17 +21,18 @@ json_file_path = "token.json"
 
 
 def tosign():
-    msg = messagebox.askyesno('Logout','Are you sure you want to logout?')
+    msg = messagebox.askyesno('Logout', 'Are you sure you want to logout?')
     if msg:
+        # Check if the "token.json" file exists
+        if os.path.exists('token.json'):
+            os.remove('token.json')
+        
         with open('user.json', 'w') as file:
             json.dump({}, file)
-            dash.destroy()
-            os.system('Login.py')
-    if os.path.exists(json_file_path):
-        os.remove(json_file_path)
+        
         dash.destroy()
         os.system('Login.py')
-    
+
 # window
 dash = Tk()
 dash.title("E.P.B.I.P")
@@ -58,11 +59,9 @@ def toscan():
     os.system('scan.py')
 
 def home():
-    if 'f3' in globals():
-        f3.destroy()
-    elif 'f4' in globals():
+    if 'f4' in globals():
         f4.destroy()
-
+    
     global box_2
     box_2 = Frame(dash, width=415, height=415, bg='#010F57')
     box_2.place(x=20, y=20)
@@ -87,22 +86,34 @@ def home():
     rp_btn = Button(box_2, image=rep_btn, width=300, height=90, bg="#021976", bd=0, cursor='hand2', command=toresult)
     rp_btn.place(x=50, y=280)
 
-def manual():
-    global f3
+def guide():
     f1.destroy()
-    f3=Frame(box_2,width=415, height=415,bg='#010F57')
-    f3.place(x=0, y=0)
-    brgr_btn = Button(f3, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu)
-    brgr_btn.place(x=10, y=5)
-   
+    pdf_file = "EPBIP_Guide-v1.1.pdf"
+    webbrowser.open(pdf_file)
 
+def manual():
+    f1.destroy()
+    pdf_file = "E.P.B.I.P_User_Manual.pdf"
+    webbrowser.open(pdf_file)
+   
 def about():
     global f4
     f1.destroy()
-    f4=Frame(box_2,width=415, height=415,bg='#010F57')
+    f4 = Frame(box_2, width=415, height=515, bg='#010F57')
     f4.place(x=0, y=0)
     brgr_btn = Button(f4, bg="#010F57", bd=0, height=40, width=30, image=brgr_pk, cursor='hand2', command=toggle_menu)
     brgr_btn.place(x=10, y=5)
+
+    about_text = """
+
+    At EPBIP, we utilize Backtracking and Image Processing algorithms to protect users from email phishing and spam attacks. Our sophisticated application analyzes content and attachments and examines images to detect suspicious patterns and visual manipulations. With a user-friendly interface and continuous improvement, we provide robust protection against evolving cyber threats, ensuring the security of sensitive information in email communications. Trust EPBIP for email security simplified.
+    """
+
+    about_label = Label(f4, text=about_text, bg='#010F57', fg='white', justify='left', font=('Arial', 12), wraplength=390)
+    about_label.pack(pady=90, padx=20)
+
+    about_title_label = Label(f4, text="About Us", bg='#010F57', fg='white', font=('Arial', 24, 'bold', 'underline'))
+    about_title_label.place(x=140,y=40)
 
 def toggle_menu():
     global f1
@@ -112,6 +123,8 @@ def toggle_menu():
     l0.place(x=0,y=82)
     l1=Frame(f1,width=146,height=2,bg='white')
     l1.place(x=0,y=122)
+    l2=Frame(f1,width=146,height=2,bg='white')
+    l2.place(x=0,y=162)
     l3=Frame(f1,width=146,height=2,bg='white')
     l3.place(x=0,y=389)
 
@@ -143,7 +156,8 @@ def toggle_menu():
         myButton1.place(x=x,y=y)
 
     bttn(0,45,'Home','#0f9d9a','#021976',home)
-    bttn(0,85,'User Manual','#0f9d9a','#021976',manual)
+    bttn(0,85,'User Guide','#0f9d9a','#021976',guide)
+    bttn(0,125,'User Manual','#0f9d9a','#021976',manual)
     bttn(0,350,'About Us','#0f9d9a','#021976',about)
 
     #exit
@@ -202,7 +216,7 @@ except FileNotFoundError:
 # Retrieve username from Firebase Realtime Database based on the email
 users = database.child("Users").get()
 username = "username"
-for user in users.each():
+for user in users.each(): # type: ignore
     if user.val()['email'] == email:
         username = user.val()['username']
         break
